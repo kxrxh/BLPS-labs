@@ -3,6 +3,8 @@ package com.itmo.blps.lab1.repositories;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.itmo.blps.lab1.entities.Advertisement;
@@ -22,4 +24,24 @@ public interface AdvertisementRepository extends JpaRepository<Advertisement, Lo
 
     List<Advertisement> findByPriceLessThan(Double price);
 
+    @Query(value = """
+            SELECT * FROM advertisement a 
+            WHERE ST_DWithin(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:longitude, :latitude)::geography,
+                :radiusInMeters
+            )
+            ORDER BY ST_Distance(
+                ST_MakePoint(a.longitude, a.latitude)::geography,
+                ST_MakePoint(:longitude, :latitude)::geography
+            )
+            """, nativeQuery = true)
+    List<Advertisement> findNearbyAdvertisements(
+            @Param("latitude") Double latitude,
+            @Param("longitude") Double longitude,
+            @Param("radiusInMeters") Double radiusInMeters
+    );
+
+    // Find by address components
+    List<Advertisement> findByPosition_CityAndPosition_District(String city, String district);
 }

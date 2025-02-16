@@ -42,6 +42,9 @@ public class Advertisement {
     private Position position;
 
     @Column(nullable = false)
+    private RealEstateType realEstateType;
+
+    @Column(nullable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
 
@@ -49,4 +52,26 @@ public class Advertisement {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private Boolean isActive = true;
+
+    @Column(nullable = false)
+    private Boolean isPromoted = false;
+
+    @ManyToOne
+    @JoinColumn(name = "promotion_id")
+    private Promotion promotion;
+
+    @Column(nullable = true)
+    private LocalDateTime startDate;
+
+    @Column(nullable = false)
+    @Min(value = 1, message = "Duration must be at least 1 day")
+    private Integer durationInDays;
+
+    public boolean isExpired() {
+        if (startDate == null)
+            return false;
+        return LocalDateTime.now().isAfter(startDate.plusDays(durationInDays));
+    }
 }

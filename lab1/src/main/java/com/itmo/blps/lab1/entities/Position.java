@@ -1,15 +1,32 @@
 package com.itmo.blps.lab1.entities;
 
 import jakarta.persistence.Embeddable;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
+import lombok.Setter;
 
 @Embeddable
-@Data
-@AllArgsConstructor
-@NoArgsConstructor
+@Getter
+@Setter
 public class Position {
-    private Double x;
-    private Double y;
+    @NotNull
+    @Column(nullable = false)
+    private Double latitude;
+
+    @NotNull
+    @Column(nullable = false)
+    private Double longitude;
+
+    @Column(nullable = false)
+    private String address;
+
+    @Column(nullable = false)
+    private String city;
+
+    @Column(nullable = false)
+    private String district;
+
+    @Column(nullable = false)
+    private String postalCode;
 }
