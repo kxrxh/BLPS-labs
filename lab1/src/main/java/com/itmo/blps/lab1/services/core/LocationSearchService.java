@@ -1,4 +1,4 @@
-package com.itmo.blps.lab1.services;
+package com.itmo.blps.lab1.services.core;
 
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;

@@ -1,6 +1,8 @@
 package com.itmo.blps.lab1.entities;
 
 import java.time.LocalDateTime;
+import java.util.Set;
+import java.util.HashSet;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -15,8 +17,14 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Getter
+@Setter
 public class Advertisement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -68,6 +76,9 @@ public class Advertisement {
     @Column(nullable = false)
     @Min(value = 1, message = "Duration must be at least 1 day")
     private Integer durationInDays;
+
+    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AdvertisementPOI> nearbyPOIs = new HashSet<>();
 
     public boolean isExpired() {
         if (startDate == null)
