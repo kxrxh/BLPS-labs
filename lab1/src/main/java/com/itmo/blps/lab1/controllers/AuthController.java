@@ -13,6 +13,7 @@ import com.itmo.blps.lab1.services.auth.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 @RestController
 @RequestMapping("/auth")
@@ -24,12 +25,16 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Login to the system")
+    @ApiResponse(responseCode = "200", description = "Login successful")
+    @ApiResponse(responseCode = "403", description = "Invalid credentials")
     public JwtDto login(@RequestBody @Valid AuthRequest request) {
         return new JwtDto(authService.login(request));
     }
 
     @PostMapping("/register")
     @Operation(summary = "Register", description = "Register a new user")
+    @ApiResponse(responseCode = "200", description = "Register successful")
+    @ApiResponse(responseCode = "403", description = "Invalid request")
     public JwtDto register(@RequestBody @Valid AuthRequest request) {
         return new JwtDto(authService.register(request));
     }

@@ -49,7 +49,7 @@ public class POIService {
         }
     }
 
-    private double calculateVincentyDistance(double lat1, double lon1, double lat2, double lon2) {
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
         // Uses the WGS84 ellipsoid model for higher accuracy
         double a = 6378137.0;
         double b = 6356752.314245;

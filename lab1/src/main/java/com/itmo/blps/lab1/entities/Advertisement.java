@@ -1,9 +1,6 @@
 package com.itmo.blps.lab1.entities;
 
 import java.time.LocalDateTime;
-import java.util.Set;
-import java.util.HashSet;
-
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -17,14 +14,16 @@ import jakarta.persistence.ManyToOne;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import jakarta.persistence.Embedded;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.CascadeType;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Advertisement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +38,7 @@ public class Advertisement {
     private String description;
 
     @Column(nullable = false)
-    @Min(1000)
+    @Min(value = 1, message = "Price must be greater than 0")
     private Double price;
 
     @ManyToOne
@@ -61,9 +60,11 @@ public class Advertisement {
     private LocalDateTime updatedAt;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isPromoted = false;
 
     @ManyToOne
@@ -76,9 +77,6 @@ public class Advertisement {
     @Column(nullable = false)
     @Min(value = 1, message = "Duration must be at least 1 day")
     private Integer durationInDays;
-
-    @OneToMany(mappedBy = "advertisement", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<AdvertisementPOI> nearbyPOIs = new HashSet<>();
 
     public boolean isExpired() {
         if (startDate == null)

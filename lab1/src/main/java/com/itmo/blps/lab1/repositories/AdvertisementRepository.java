@@ -43,5 +43,5 @@ public interface AdvertisementRepository extends JpaRepository<Advertisement, Lo
     );
 
     // Find by address components
-    List<Advertisement> findByPosition_CityAndPosition_District(String city, String district);
+    List<Advertisement> findByPosition_City(String city);
 }

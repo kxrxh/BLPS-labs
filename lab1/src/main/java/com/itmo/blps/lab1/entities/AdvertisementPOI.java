@@ -1,12 +1,16 @@
 package com.itmo.blps.lab1.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 @Entity
-@Getter
-@Setter
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "advertisement_pois")
 public class AdvertisementPOI {
     @Id

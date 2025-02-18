@@ -25,7 +25,7 @@ public class LocationSearchService {
         return advertisementRepository.findNearbyAdvertisements(latitude, longitude, radiusInMeters);
     }
 
-    public List<Advertisement> findByLocation(String city, String district) {
-        return advertisementRepository.findByPosition_CityAndPosition_District(city, district);
+    public List<Advertisement> findByLocation(String city) {
+        return advertisementRepository.findByPosition_City(city);
     }
 } 
