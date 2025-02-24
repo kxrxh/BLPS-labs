@@ -28,7 +28,7 @@ public class AdvertisementController {
     @Autowired
     private AdvertisementService advertisementService;
 
-    @PostMapping("/create")
+    @PostMapping
     @Operation(summary = "Create a new advertisement", description = "Creates a new advertisement with the provided details")
     @ApiResponse(responseCode = "200", description = "Advertisement created successfully")
     public Advertisement createAdvertisement(@RequestBody @Valid AdDto adDto) {
@@ -57,13 +57,13 @@ public class AdvertisementController {
         return advertisementService.getAllAdvertisements();
     }
 
-    @PostMapping("/{id}/promotion")
+    @PatchMapping("/{id}/promotion")
     @Operation(summary = "Add promotion to advertisement", description = "Adds a promotion to the specified advertisement")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Advertisement> addPromotion(@PathVariable Long id, @RequestBody Promotion promotion) {
+    public ResponseEntity<Advertisement> addPromotion(@PathVariable Long id, @RequestBody @Valid Promotion promotion) {
         return ResponseEntity.ok(advertisementService.addPromotion(id, promotion));
     }
 

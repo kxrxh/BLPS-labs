@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -34,7 +35,7 @@ public class PaymentController {
     @PostMapping("/process")
     @Operation(summary = "Process payment", description = "Processes payment for promotion and applies promotion if successful")
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
-    public String processPayment(@RequestBody PaymentDto paymentDto) {
+    public String processPayment(@RequestBody @Valid PaymentDto paymentDto) {
         Payment payment = paymentService.createPayment(paymentDto);
         return paymentService.processPayment(payment);
     }

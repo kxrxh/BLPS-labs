@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ import java.util.List;
 @RequestMapping("/promotions")
 @Tag(name = "Promotion", description = "Promotion Management API")
 @SecurityRequirement(name = "Bearer Authentication")
-public class ProtomotionController {
+public class PromotionController {
 
     @Autowired
     private PromotionService promotionService;
@@ -34,7 +35,7 @@ public class ProtomotionController {
             @ApiResponse(responseCode = "200", description = "Promotion created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
     })
-    public Promotion createPromotion(@RequestBody PromotionDto promotionDto) {
+    public Promotion createPromotion(@RequestBody @Valid PromotionDto promotionDto) {
         return promotionService.createPromotion(promotionDto);
     }
 
@@ -75,7 +76,7 @@ public class ProtomotionController {
             @ApiResponse(responseCode = "400", description = "Invalid input or ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Promotion not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public Promotion updatePromotion(@PathVariable Long id, @RequestBody PromotionDto promotionDto) {
+    public Promotion updatePromotion(@PathVariable Long id, @RequestBody @Valid PromotionDto promotionDto) {
         return promotionService.updatePromotion(id, promotionDto);
     }
 
@@ -90,7 +91,7 @@ public class ProtomotionController {
         promotionService.deletePromotion(id);
     }
 
-    @PutMapping("/{id}/activate")
+    @PatchMapping("/{id}/activate")
     @Operation(summary = "Activate promotion", description = "Activates an existing promotion")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Promotion activated successfully"),
@@ -101,7 +102,7 @@ public class ProtomotionController {
         promotionService.activatePromotion(id);
     }
 
-    @PutMapping("/{id}/deactivate")
+    @PatchMapping("/{id}/deactivate")
     @Operation(summary = "Deactivate promotion", description = "Deactivates an existing promotion")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Promotion deactivated successfully"),
