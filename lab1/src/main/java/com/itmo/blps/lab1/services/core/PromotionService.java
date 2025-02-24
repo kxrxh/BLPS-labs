@@ -45,4 +45,15 @@ public class PromotionService {
                 .orElseThrow(() -> new RuntimeException("Promotion not found with id: " + id));
         promotionRepository.delete(promotion);
     }
+
+    /**
+     * Applies the promotion by activating it
+     * 
+     * @param promotion The promotion to be applied
+     * @return The updated promotion
+     */
+    public Promotion applyPromotion(Promotion promotion) {
+        promotion.setIsActive(true);
+        return promotionRepository.save(promotion);
+    }
 }

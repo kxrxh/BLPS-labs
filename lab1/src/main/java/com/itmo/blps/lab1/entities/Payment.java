@@ -1,0 +1,46 @@
+package com.itmo.blps.lab1.entities;
+
+import java.time.LocalDateTime;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "payment")
+public class Payment {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Chosen payment provider (the user selects one from the available providers)
+    @Column(nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "provider_id")
+    private PaymentProvider provider;
+
+    // The promotion being paid for
+    @OneToOne
+    @JoinColumn(name = "promotion_id")
+    private Promotion promotion;
+
+    // Payment amount (could be derived from the promotion price)
+    @Column(nullable = false)
+    private Double amount;
+
+    // Payment status
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus status;
+
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
+}
