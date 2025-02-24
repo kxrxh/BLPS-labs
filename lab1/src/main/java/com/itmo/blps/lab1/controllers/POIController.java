@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PoiDto;
-import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.POI;
 import com.itmo.blps.lab1.services.core.POIService;
 
