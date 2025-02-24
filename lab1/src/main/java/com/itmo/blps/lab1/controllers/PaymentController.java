@@ -24,7 +24,6 @@ public class PaymentController {
     @Autowired
     private PaymentService paymentService;
 
-    // Endpoint to get all available payment providers.
     @GetMapping("/providers")
     @Operation(summary = "Get available payment providers", description = "Retrieves available payment providers from the database")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved payment providers")
@@ -32,7 +31,6 @@ public class PaymentController {
         return paymentService.getAvailableProviders();
     }
 
-    // Endpoint to process a payment.
     @PostMapping("/process")
     @Operation(summary = "Process payment", description = "Processes payment for promotion and applies promotion if successful")
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
