@@ -1,6 +1,7 @@
 package com.itmo.blps.lab1.repositories;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +24,8 @@ public interface AdvertisementRepository extends JpaRepository<Advertisement, Lo
     List<Advertisement> findByPriceGreaterThan(Double price);
 
     List<Advertisement> findByPriceLessThan(Double price);
+
+    Optional<Advertisement> findByPromotionId(Long promotionId);
 
     @Query(value = """
             SELECT * FROM advertisement a 

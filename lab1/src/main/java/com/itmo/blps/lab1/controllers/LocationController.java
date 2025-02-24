@@ -8,6 +8,7 @@ import com.itmo.blps.lab1.services.core.LocationSearchService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/locations")
 @Tag(name = "Location", description = "Location Search API")
+@SecurityRequirement(name = "Bearer Authentication")
 public class LocationController {
 
     @Autowired

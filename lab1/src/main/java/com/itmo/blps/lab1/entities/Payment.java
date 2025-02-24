@@ -19,19 +19,23 @@ public class Payment {
     private Long id;
 
     // Chosen payment provider (the user selects one from the available providers)
-    @Column(nullable = false)
     @ManyToOne
-    @JoinColumn(name = "provider_id")
+    @JoinColumn(name = "provider_id", nullable = false)
     private PaymentProvider provider;
 
     // The promotion being paid for
     @OneToOne
-    @JoinColumn(name = "promotion_id")
+    @JoinColumn(name = "promotion_id", nullable = false)
     private Promotion promotion;
 
     // Payment amount (could be derived from the promotion price)
     @Column(nullable = false)
     private Double amount;
+
+    // The user who is paying for the promotion
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User payer;
 
     // Payment status
     @Enumerated(EnumType.STRING)

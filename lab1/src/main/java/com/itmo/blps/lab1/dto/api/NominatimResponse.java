@@ -1,4 +1,4 @@
-package com.itmo.blps.lab1.dto;
+package com.itmo.blps.lab1.dto.api;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

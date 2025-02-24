@@ -2,7 +2,6 @@ package com.itmo.blps.lab1.config;
 
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
@@ -19,10 +18,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("BLPS Lab1 API")
                         .version("1.0")
-                        .description("API Documentation for BLPS Lab1")
-                        .contact(new Contact()
-                                .name("Your Name")
-                                .email("your.email@example.com")))
+                        .description("API Documentation for BLPS Lab1"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName))
                 .components(new Components()

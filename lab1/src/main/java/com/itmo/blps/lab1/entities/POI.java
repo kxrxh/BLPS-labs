@@ -28,13 +28,6 @@ public class POI {
     private POIType type;
 
     @NotNull
-    @Column(nullable = false)
-    private Double latitude;
-
-    @NotNull
-    @Column(nullable = false)
-    private Double longitude;
-
-    @Column(nullable = false)
-    private String address;
-} 
+    @Embedded
+    private Position position;
+}

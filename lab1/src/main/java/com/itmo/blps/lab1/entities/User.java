@@ -37,12 +37,12 @@ public class User implements UserDetails {
     private Long id;
 
     @Column(nullable = false, unique = true, name = "username")
-    @Size(min = 3, message = "Username must be at least 3 characters long")
+    @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
     private String username;
 
     @Column(nullable = false)
     @JsonIgnore
-    @Size(min = 8, message = "Password must be at least 8 characters long")
+    @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 
     @Column(nullable = false)
