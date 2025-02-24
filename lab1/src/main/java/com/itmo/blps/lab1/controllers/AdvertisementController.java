@@ -1,19 +1,20 @@
 package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.entities.Advertisement;
+import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/advertisements")
@@ -30,4 +31,41 @@ public class AdvertisementController {
         return advertisementService.createAdvertisement(adDto);
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Get advertisement by ID", description = "Retrieves an advertisement by its ID")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved the advertisement")
+    public ResponseEntity<Advertisement> getAdvertisement(@PathVariable Long id) {
+        return advertisementService.getAdvertisementById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all advertisements", description = "Retrieves all advertisements")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved all advertisements")
+    public List<Advertisement> getAllAdvertisements() {
+        return advertisementService.getAllAdvertisements();
+    }
+
+    @PostMapping("/{id}/promotion")
+    @Operation(summary = "Add promotion to advertisement", description = "Adds a promotion to the specified advertisement")
+    @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement")
+    public ResponseEntity<Advertisement> addPromotion(@PathVariable Long id, @RequestBody Promotion promotion) {
+        return ResponseEntity.ok(advertisementService.addPromotion(id, promotion));
+    }
+
+    @DeleteMapping("/{id}/promotion")
+    @Operation(summary = "Remove promotion from advertisement", description = "Removes the promotion from the specified advertisement")
+    @ApiResponse(responseCode = "200", description = "Successfully removed promotion from advertisement")
+    public ResponseEntity<Advertisement> removePromotion(@PathVariable Long id) {
+        return ResponseEntity.ok(advertisementService.removePromotion(id));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete advertisement", description = "Deletes an advertisement by its ID")
+    @ApiResponse(responseCode = "200", description = "Successfully deleted the advertisement")
+    public ResponseEntity<Void> deleteAdvertisement(@PathVariable Long id) {
+        advertisementService.deleteAdvertisement(id);
+        return ResponseEntity.ok().build();
+    }
 }

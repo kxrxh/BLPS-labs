@@ -11,7 +11,11 @@ import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.dto.NominatimResponse;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Position;
+import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdvertisementService {
@@ -53,27 +57,27 @@ public class AdvertisementService {
                         bestMatch = response;
                     }
                 }
-                
+
                 double lat = Double.parseDouble(bestMatch.getLat());
                 double lon = Double.parseDouble(bestMatch.getLon());
-                
+
                 Position position = Position.builder()
-                    .latitude(lat)
-                    .longitude(lon)
-                    .address(bestMatch.getDisplay_name()) // Use display_name instead of original address
-                    .city(city)
-                    .build();
+                        .latitude(lat)
+                        .longitude(lon)
+                        .address(bestMatch.getDisplay_name()) // Use display_name instead of original address
+                        .city(city)
+                        .build();
                 return position;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         Position fallbackPosition = Position.builder()
-        .latitude(41.0)
-        .longitude(19.0)
-        .address(address)
-        .city(city)
-        .build();
+                .latitude(41.0)
+                .longitude(19.0)
+                .address(address)
+                .city(city)
+                .build();
 
         double baseLat = 41.0;
         double latOffset = (Math.abs(address.hashCode() + city.hashCode()) % 3600) / 100.0;
@@ -87,5 +91,36 @@ public class AdvertisementService {
         fallbackPosition.setCity(city);
 
         return fallbackPosition;
+    }
+
+    public Optional<Advertisement> getAdvertisementById(Long id) {
+        return advertisementRepository.findById(id);
+    }
+
+    public List<Advertisement> getAllAdvertisements() {
+        return advertisementRepository.findAll();
+    }
+
+    public Advertisement addPromotion(Long id, Promotion promotion) {
+        Advertisement advertisement = advertisementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Advertisement not found with id: " + id));
+
+        advertisement.setPromotion(promotion);
+        return advertisementRepository.save(advertisement);
+    }
+
+    public Advertisement removePromotion(Long id) {
+        Advertisement advertisement = advertisementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Advertisement not found with id: " + id));
+
+        advertisement.setPromotion(null);
+        return advertisementRepository.save(advertisement);
+    }
+
+    public void deleteAdvertisement(Long id) {
+        Advertisement advertisement = advertisementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Advertisement not found with id: " + id));
+
+        advertisementRepository.delete(advertisement);
     }
 }
