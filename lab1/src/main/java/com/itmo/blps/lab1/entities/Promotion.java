@@ -44,4 +44,7 @@ public class Promotion {
 
     @Column(nullable = false)
     private Double price;
+
+    @Column(nullable = false)
+    private Integer durationInDays = 30; // Default duration of 30 days
 }

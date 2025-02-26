@@ -57,14 +57,14 @@ public class AdvertisementController {
         return advertisementService.getAllAdvertisements();
     }
 
-    @PatchMapping("/{id}/promotion")
+    @PatchMapping("/promotion")
     @Operation(summary = "Add promotion to advertisement", description = "Adds a promotion to the specified advertisement")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<AdvertisementResponseDto> addPromotion(@PathVariable Long id, @RequestBody @Valid Promotion promotion) {
-        return ResponseEntity.ok(advertisementService.addPromotion(id, promotion));
+    public ResponseEntity<AdvertisementResponseDto> addPromotion(@RequestParam Long id, @RequestParam Long promotionId) {
+        return ResponseEntity.ok(advertisementService.addPromotion(id, promotionId));
     }
 
     @DeleteMapping("/{id}/promotion")

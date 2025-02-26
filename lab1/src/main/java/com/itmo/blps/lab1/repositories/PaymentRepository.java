@@ -5,8 +5,10 @@ import org.springframework.stereotype.Repository;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentStatus;
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByPromotionIdAndStatus(Long promotionId, PaymentStatus status);
+    List<Payment> findByPromotionId(Long promotionId);
 }

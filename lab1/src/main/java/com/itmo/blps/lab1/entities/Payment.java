@@ -23,6 +23,11 @@ public class Payment {
     @JoinColumn(name = "provider_id", nullable = false)
     private PaymentProvider provider;
 
+    // The advertisement being paid for
+    @ManyToOne
+    @JoinColumn(name = "advertisement_id", nullable = false)
+    private Advertisement advertisement;
+
     // The promotion being paid for
     @ManyToOne
     @JoinColumn(name = "promotion_id", nullable = false)

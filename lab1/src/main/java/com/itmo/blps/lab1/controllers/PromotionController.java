@@ -79,37 +79,4 @@ public class PromotionController {
     public Promotion updatePromotion(@PathVariable Long id, @RequestBody @Valid PromotionDto promotionDto) {
         return promotionService.updatePromotion(id, promotionDto);
     }
-
-    @DeleteMapping("/{id}")
-    @Operation(summary = "Delete promotion", description = "Deletes an existing promotion")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Promotion deleted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Promotion not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    public void deletePromotion(@PathVariable Long id) {
-        promotionService.deletePromotion(id);
-    }
-
-    @PatchMapping("/{id}/activate")
-    @Operation(summary = "Activate promotion", description = "Activates an existing promotion")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Promotion activated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Promotion not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    public void activatePromotion(@PathVariable Long id) {
-        promotionService.activatePromotion(id);
-    }
-
-    @PatchMapping("/{id}/deactivate")
-    @Operation(summary = "Deactivate promotion", description = "Deactivates an existing promotion")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Promotion deactivated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Promotion not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    })
-    public void deactivatePromotion(@PathVariable Long id) {
-        promotionService.deactivatePromotion(id);
-    }
 }

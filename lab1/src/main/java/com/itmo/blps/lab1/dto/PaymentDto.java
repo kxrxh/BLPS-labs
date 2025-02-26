@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class PaymentDto {
     @NotNull
-    @Min(value = 1, message = "Promotion ID must be greater than 0")
-    private Long promotionId;
+    @Min(value = 1, message = "Advertisement ID must be greater than 0")
+    private Long advertisementId;
     @NotNull
     @Min(value = 1, message = "Provider ID must be greater than 0")
     private Long providerId;

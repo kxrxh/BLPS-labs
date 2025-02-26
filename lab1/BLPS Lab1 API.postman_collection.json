@@ -106,7 +106,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"title\": \"Beautiful Apartment in the City Center 1\",\n    \"description\": \"Modern apartment with 2 bedrooms and a spacious living room. Close to metro and shops.\",\n    \"price\": 150000,\n    \"address\": \"123 Main Street, Apt 5\",\n    \"city\": \"Saint Petersburg\",\n    \"realEstateType\": \"APARTMENT\"\n}"
+							"raw": "{\n    \"title\": \"Beautiful Apartment in the City Center 1\",\n    \"description\": \"Modern apartment with 2 bedrooms and a spacious living room. Close to metro and shops.\",\n    \"price\": 150000,\n    \"address\": \"Лиговский проспект, 127\",\n    \"city\": \"Санкт-Петербург\",\n    \"realEstateType\": \"APARTMENT\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/advertisements",
@@ -124,16 +124,26 @@
 				{
 					"name": "Get Advertisement by ID",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/advertisements/1",
+							"raw": "{{base_url}}/advertisements/2",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"advertisements",
-								"1"
+								"2"
 							]
 						},
 						"description": "Get a specific advertisement by ID"
@@ -143,6 +153,16 @@
 				{
 					"name": "Get All Advertisements",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{auth_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -393,95 +413,6 @@
 						"description": "Update an existing promotion"
 					},
 					"response": []
-				},
-				{
-					"name": "Delete Promotion",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{auth_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/promotions/1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"promotions",
-								"1"
-							]
-						},
-						"description": "Delete a specific promotion"
-					},
-					"response": []
-				},
-				{
-					"name": "Activate Promotion",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{auth_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/promotions/1/activate",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"promotions",
-								"1",
-								"activate"
-							]
-						},
-						"description": "Activate a specific promotion"
-					},
-					"response": []
-				},
-				{
-					"name": "Deactivate Promotion",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{auth_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/promotions/1/deactivate",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"promotions",
-								"1",
-								"deactivate"
-							]
-						},
-						"description": "Deactivate a specific promotion"
-					},
-					"response": []
 				}
 			],
 			"description": "Promotion management endpoints"
@@ -584,7 +515,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Central Park\",\n    \"address\": \"456 Park Avenue\",\n    \"city\": \"Saint Petersburg\",\n    \"type\": \"PARK\"\n}"
+							"raw": "{\n    \"name\": \"Измайловский сад\",\n    \"address\": \"Измайловский сад\",\n    \"city\": \"Санкт-Петербург\",\n    \"type\": \"PARK\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/poi/",
@@ -749,7 +680,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/locations/nearby/custom?latitude=59.9343&longitude=30.3351&radiusInMeters=5000",
+							"raw": "{{base_url}}/locations/nearby/custom?latitude=59.9180409&longitude=30.3519355715824&radiusInMeters=5000",
 							"host": [
 								"{{base_url}}"
 							],
@@ -761,11 +692,11 @@
 							"query": [
 								{
 									"key": "latitude",
-									"value": "59.9343"
+									"value": "59.9180409"
 								},
 								{
 									"key": "longitude",
-									"value": "30.3351"
+									"value": "30.3519355715824"
 								},
 								{
 									"key": "radiusInMeters",

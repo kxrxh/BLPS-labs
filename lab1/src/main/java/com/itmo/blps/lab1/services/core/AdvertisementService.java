@@ -9,6 +9,7 @@ import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.entities.AdvertisementPOI;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
+import com.itmo.blps.lab1.repositories.PromotionRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementPOIRepository;
 
 import io.basc.framework.lang.NotFoundException;
@@ -22,6 +23,8 @@ public class AdvertisementService {
     @Autowired
     private AdvertisementRepository advertisementRepository;
 
+    @Autowired
+    private PromotionRepository promotionRepository;
     @Autowired
     private POIService poiService;
 
@@ -68,9 +71,11 @@ public class AdvertisementService {
                 .collect(Collectors.toList());
     }
 
-    public AdvertisementResponseDto addPromotion(Long id, Promotion promotion) {
+    public AdvertisementResponseDto addPromotion(Long id, Long promotionId) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
+        Promotion promotion = promotionRepository.findById(promotionId)
+                .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + promotionId));
 
         advertisement.setPromotion(promotion);
         advertisement = advertisementRepository.save(advertisement);

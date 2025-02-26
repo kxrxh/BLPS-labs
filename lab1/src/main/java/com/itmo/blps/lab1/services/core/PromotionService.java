@@ -7,7 +7,9 @@ import com.itmo.blps.lab1.dto.PromotionDto;
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
+import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.entities.Advertisement;
+import com.itmo.blps.lab1.entities.Payment;
 
 import io.basc.framework.lang.NotFoundException;
 
@@ -22,6 +24,9 @@ public class PromotionService {
 
     @Autowired
     private AdvertisementRepository advertisementRepository;
+
+    @Autowired
+    private PaymentRepository paymentRepository;
 
     public Promotion createPromotion(PromotionDto promotionDto) {
         Promotion promotion = new Promotion();
@@ -67,6 +72,10 @@ public class PromotionService {
             ad.setIsPromoted(false);
             advertisementRepository.save(ad);
         }
+
+        // Delete all payment records associated with this promotion
+        List<Payment> payments = paymentRepository.findByPromotionId(id);
+        paymentRepository.deleteAll(payments);
 
         // Now we can safely delete the promotion
         promotionRepository.delete(promotion);
