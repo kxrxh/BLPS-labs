@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.dto.error.ErrorResponse;
-import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 
 import io.swagger.v3.oas.annotations.Operation;

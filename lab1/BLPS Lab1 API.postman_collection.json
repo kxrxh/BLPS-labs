@@ -198,19 +198,24 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"id\": 1,\n    \"name\": \"Featured Listing\",\n    \"description\": \"Promotes your advertisement to the top of search results\",\n    \"price\": 50.0,\n    \"active\": true\n}"
-						},
 						"url": {
-							"raw": "{{base_url}}/advertisements/1/promotion",
+							"raw": "{{base_url}}/advertisements/promotion?id=1&promotionId=1",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
 								"advertisements",
-								"1",
 								"promotion"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "1"
+								},
+								{
+									"key": "promotionId",
+									"value": "1"
+								}
 							]
 						},
 						"description": "Add a promotion to an advertisement"
@@ -471,7 +476,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"promotionId\": 1,\n    \"providerId\": 1,\n    \"amount\": 100.0\n}"
+							"raw": "{\n    \"advertisementId\": 1,\n    \"providerId\": 1,\n    \"amount\": 100.0\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/payments/process",
