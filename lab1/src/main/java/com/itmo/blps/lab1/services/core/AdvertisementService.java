@@ -7,6 +7,7 @@ import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Promotion;
+import com.itmo.blps.lab1.exception.BadRequestException;
 import com.itmo.blps.lab1.entities.AdvertisementPOI;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
@@ -46,7 +47,7 @@ public class AdvertisementService {
         advertisement = advertisementRepository.save(advertisement);
         advertisement = poiService.updateAdvertisementPOIs(advertisement.getId());
         List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(advertisement.getId());
-        
+
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
@@ -74,10 +75,16 @@ public class AdvertisementService {
     public AdvertisementResponseDto addPromotion(Long id, Long promotionId) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
+
+        if (advertisement.getIsPromoted()) {
+            throw new BadRequestException("Advertisement is already promoted. First remove the promotion and then add a new one.");
+        }
+
         Promotion promotion = promotionRepository.findById(promotionId)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + promotionId));
 
         advertisement.setPromotion(promotion);
+        advertisement.setIsPromoted(false);
         advertisement = advertisementRepository.save(advertisement);
         List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
