@@ -34,7 +34,7 @@ public class POIService {
     @Autowired
     private LocationService locationService;
 
-    @Value("${poi.search-radius-meters:1000}")
+    @Value("${poi.search-radius-meters:5000}")
     private Double defaultSearchRadius;
 
     public POI addPOI(PoiDto poiDto) {
@@ -58,6 +58,9 @@ public class POIService {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found: " + id));
         
+        // Delete existing POI associations
+        advertisementPOIRepository.deleteByAdvertisementId(id);
+        
         // Find all POIs near the advertisement
         for (POIType poiType : POIType.values()) {
             List<POI> nearbyPOIs = locationService.findNearbyPOIsByType(
@@ -68,17 +71,22 @@ public class POIService {
 
             // Create AdvertisementPOI entries for each nearby POI
             for (POI poi : nearbyPOIs) {
-                AdvertisementPOI adPoi = new AdvertisementPOI();
-                adPoi.setAdvertisement(advertisement);
-                adPoi.setPoi(poi);
-                // Calculate distance using LocationService
-                double distance = locationService.calculateDistance(
-                        advertisement.getPosition().getLatitude(),
-                        advertisement.getPosition().getLongitude(),
-                        poi.getPosition().getLatitude(),
-                        poi.getPosition().getLongitude());
-                adPoi.setDistanceInMeters(distance);
-                advertisementPOIRepository.save(adPoi);
+                Optional<AdvertisementPOI> existingAdPoi = advertisementPOIRepository
+                    .findByAdvertisementIdAndPoiId(advertisement.getId(), poi.getId());
+                
+                if (existingAdPoi.isEmpty()) {
+                    AdvertisementPOI adPoi = new AdvertisementPOI();
+                    adPoi.setAdvertisement(advertisement);
+                    adPoi.setPoi(poi);
+                    // Calculate distance using LocationService
+                    double distance = locationService.calculateDistance(
+                            advertisement.getPosition().getLatitude(),
+                            advertisement.getPosition().getLongitude(),
+                            poi.getPosition().getLatitude(),
+                            poi.getPosition().getLongitude());
+                    adPoi.setDistanceInMeters(distance);
+                    advertisementPOIRepository.save(adPoi);
+                }
             }
         }
         return advertisement;

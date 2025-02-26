@@ -5,8 +5,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.AdDto;
+import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.dto.error.ErrorResponse;
-import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 
@@ -31,7 +31,7 @@ public class AdvertisementController {
     @PostMapping
     @Operation(summary = "Create a new advertisement", description = "Creates a new advertisement with the provided details")
     @ApiResponse(responseCode = "200", description = "Advertisement created successfully")
-    public Advertisement createAdvertisement(@RequestBody @Valid AdDto adDto) {
+    public AdvertisementResponseDto createAdvertisement(@RequestBody @Valid AdDto adDto) {
         return advertisementService.createAdvertisement(adDto);
     }
 
@@ -41,7 +41,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved the advertisement"),
             @ApiResponse(responseCode = "404", description = "Advertisement not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Advertisement> getAdvertisement(@PathVariable Long id) {
+    public ResponseEntity<AdvertisementResponseDto> getAdvertisement(@PathVariable Long id) {
         return advertisementService.getAdvertisementById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -53,7 +53,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all advertisements"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public List<Advertisement> getAllAdvertisements() {
+    public List<AdvertisementResponseDto> getAllAdvertisements() {
         return advertisementService.getAllAdvertisements();
     }
 
@@ -63,7 +63,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Advertisement> addPromotion(@PathVariable Long id, @RequestBody @Valid Promotion promotion) {
+    public ResponseEntity<AdvertisementResponseDto> addPromotion(@PathVariable Long id, @RequestBody @Valid Promotion promotion) {
         return ResponseEntity.ok(advertisementService.addPromotion(id, promotion));
     }
 
@@ -73,7 +73,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully removed promotion from advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public ResponseEntity<Advertisement> removePromotion(@PathVariable Long id) {
+    public ResponseEntity<AdvertisementResponseDto> removePromotion(@PathVariable Long id) {
         return ResponseEntity.ok(advertisementService.removePromotion(id));
     }
 }
