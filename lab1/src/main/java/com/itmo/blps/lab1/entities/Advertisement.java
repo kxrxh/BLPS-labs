@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.annotation.Nullable;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -74,7 +75,7 @@ public class Advertisement {
     @Column(nullable = true)
     private LocalDateTime startDate;
 
-    @Column(nullable = false)
+    @Nullable
     @Min(value = 1, message = "Duration must be at least 1 day")
     private Integer durationInDays;
 
