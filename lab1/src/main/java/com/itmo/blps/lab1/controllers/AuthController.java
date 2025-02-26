@@ -2,7 +2,6 @@ package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +27,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Login to the system")
     @ApiResponse(responseCode = "200", description = "Login successful")
-    @ApiResponse(responseCode = "403", description = "Invalid credentials")
+    @ApiResponse(responseCode = "400", description = "Invalid credentials")
     public ResponseEntity<?> login(@RequestBody @Valid AuthRequest request) {
         return ResponseEntity.ok(new JwtDto(authService.login(request)));
     }
@@ -38,9 +37,6 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "Register successful")
     @ApiResponse(responseCode = "403", description = "Invalid request")
     public ResponseEntity<?> register(@RequestBody @Valid AuthRequest request) {
-        if (authService.register(request) == "User already exists") {
-            throw new BadCredentialsException("User already exists");
-        }
         return ResponseEntity.ok(new JwtDto(authService.register(request)));
     }
 }

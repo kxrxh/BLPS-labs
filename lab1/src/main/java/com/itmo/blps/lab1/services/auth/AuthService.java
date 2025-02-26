@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.itmo.blps.lab1.dto.auth.AuthRequest;
 import com.itmo.blps.lab1.entities.User;
+import com.itmo.blps.lab1.exception.BadRequestException;
 import com.itmo.blps.lab1.services.core.UserService;
 
 @Service
@@ -27,7 +28,7 @@ public class AuthService {
 
     public String register(AuthRequest request) {
         if (userService.getUserByUsername(request.getUsername()) != null) {
-            return "User already exists";
+            throw new BadRequestException("User already exists");
         }
         User user = User.builder()
                 .username(request.getUsername())

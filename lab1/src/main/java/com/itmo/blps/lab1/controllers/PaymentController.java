@@ -1,6 +1,7 @@
 package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
@@ -14,7 +15,9 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
@@ -35,8 +38,14 @@ public class PaymentController {
     @PostMapping("/process")
     @Operation(summary = "Process payment", description = "Processes payment for promotion and applies promotion if successful")
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
-    public String processPayment(@RequestBody @Valid PaymentDto paymentDto) {
+    public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto) {
         Payment payment = paymentService.createPayment(paymentDto);
-        return paymentService.processPayment(payment);
+        String paymentInfo = paymentService.processPayment(payment);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("payment_info", paymentInfo);
+        
+        return ResponseEntity.ok(response);
     }
 }

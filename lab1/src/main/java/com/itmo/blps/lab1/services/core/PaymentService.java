@@ -14,6 +14,7 @@ import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
 import com.itmo.blps.lab1.entities.User;
+import com.itmo.blps.lab1.exception.BadRequestException;
 
 import io.basc.framework.lang.NotFoundException;
 
@@ -59,11 +60,11 @@ public class PaymentService {
                         () -> new NotFoundException("Advertisement not found: " + paymentDto.getAdvertisementId())));
 
         if (payment.getAdvertisement().getPromotion() == null) {
-            throw new RuntimeException("Please select a promotion for this advertisement");
+            throw new BadRequestException("Please select a promotion for this advertisement");
         }
 
         if (payment.getAdvertisement().getIsPromoted()) {
-            throw new RuntimeException("This advertisement is already promoted");
+            throw new BadRequestException("This advertisement is already promoted");
         }
 
         payment.setPromotion(promotionRepository.findById(payment.getAdvertisement().getPromotion().getId())
@@ -97,7 +98,7 @@ public class PaymentService {
                 return applyPromotion(payment);
             } else {
                 setPaymentStatus(payment, PaymentStatus.FAILED);
-                return "Transaction failed. Please try again.";
+                throw new RuntimeException("Transaction failed. Please try again.");
             }
         } catch (Exception e) {
             setPaymentStatus(payment, PaymentStatus.FAILED);
