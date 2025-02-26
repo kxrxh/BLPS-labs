@@ -2,50 +2,101 @@ package com.itmo.blps.lab1.services.core;
 
 import com.itmo.blps.lab1.dto.api.NominatimResponse;
 import com.itmo.blps.lab1.entities.Position;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class GeoService {
     
+    private static final long REQUEST_INTERVAL_MS = 1000; // 1 second between requests
+    private final AtomicLong lastRequestTime = new AtomicLong(0);
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+    
+    public GeoService() {
+        this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
+    
     public Position getPositionFromAddress(String address, String city) {
         String fullAddress = city + ", " + address;
-
-        try {
-            String encodedAddress = URLEncoder.encode(fullAddress, StandardCharsets.UTF_8.toString());
-            String url = "https://nominatim.openstreetmap.org/search?format=json&q=" + encodedAddress;
-
-            RestTemplate restTemplate = new RestTemplate();
-            NominatimResponse[] responses = restTemplate.getForObject(url, NominatimResponse[].class);
-            if (responses != null && responses.length > 0) {
-                // Find response with highest importance
-                NominatimResponse bestMatch = responses[0];
-                for (NominatimResponse response : responses) {
-                    if (response.getImportance() > bestMatch.getImportance()) {
-                        bestMatch = response;
-                    }
-                }
-
-                double lat = Double.parseDouble(bestMatch.getLat());
-                double lon = Double.parseDouble(bestMatch.getLon());
-
-                return Position.builder()
-                        .latitude(lat)
-                        .longitude(lon)
-                        .address(bestMatch.getDisplay_name())
-                        .city(city)
-                        .build();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         
-        return getFallbackPosition(address, city);
+        try {
+            // Rate limiting
+            synchronized (this) {
+                long now = System.currentTimeMillis();
+                long timeSinceLastRequest = now - lastRequestTime.get();
+                
+                if (timeSinceLastRequest < REQUEST_INTERVAL_MS) {
+                    long waitTime = REQUEST_INTERVAL_MS - timeSinceLastRequest;
+                    Thread.sleep(waitTime);
+                }
+            }
+            
+            String encodedAddress = URLEncoder.encode(fullAddress, StandardCharsets.UTF_8);
+            String url = "https://nominatim.openstreetmap.org/search?format=json&q=" + encodedAddress;
+            
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("User-Agent", "my-app/1.0")
+                    .header("Accept", "*/*")
+                    .GET()
+                    .build();
+            
+            System.out.println("Request URL: " + url);
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            
+            // Update last request time after successful request
+            synchronized (this) {
+                lastRequestTime.set(System.currentTimeMillis());
+            }
+            
+            // Parse JSON response
+            NominatimResponse[] results = objectMapper.readValue(response.body(), NominatimResponse[].class);
+            
+            System.out.println("Raw Response: " + (results != null ? results.length : "null") + " items");
+            if (results != null) {
+                for (NominatimResponse result : results) {
+                    System.out.println("  - " + result);
+                }
+            }
+            
+            if (results == null || results.length == 0) {
+                System.out.println("No results found for: " + fullAddress);
+                return getFallbackPosition(address, city);
+            }
+            
+            // Find best match based on importance
+            NominatimResponse bestMatch = Arrays.stream(results)
+                    .max(Comparator.comparingDouble(r -> r.getImportance() != null ? r.getImportance() : 0))
+                    .get();
+            
+            return Position.builder()
+                    .latitude(Double.parseDouble(bestMatch.getLat()))
+                    .longitude(Double.parseDouble(bestMatch.getLon()))
+                    .address(address)
+                    .city(city)
+                    .build();
+                
+        } catch (Exception e) {
+            System.out.println("Error while geocoding address: " + e.getMessage());
+            e.printStackTrace();
+            return getFallbackPosition(address, city);
+        }
     }
-
+    
     private Position getFallbackPosition(String address, String city) {
         Position fallbackPosition = Position.builder()
                 .latitude(41.0)
@@ -115,4 +166,5 @@ public class GeoService {
         double distance = b * A * (sigma - deltaSigma);
         return distance; // distance in meters
     }
+
 }

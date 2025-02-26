@@ -14,15 +14,18 @@ public class LocationSearchService {
     @Autowired
     private AdvertisementRepository advertisementRepository;
     
+    @Autowired
+    private LocationService locationService;
+    
     @Value("${search.default-radius-meters:5000}")
     private Double defaultSearchRadius;
 
     public List<Advertisement> findNearbyAdvertisements(Double latitude, Double longitude) {
-        return advertisementRepository.findNearbyAdvertisements(latitude, longitude, defaultSearchRadius);
+        return locationService.findNearbyAdvertisements(latitude, longitude, defaultSearchRadius);
     }
 
     public List<Advertisement> findNearbyAdvertisements(Double latitude, Double longitude, Double radiusInMeters) {
-        return advertisementRepository.findNearbyAdvertisements(latitude, longitude, radiusInMeters);
+        return locationService.findNearbyAdvertisements(latitude, longitude, radiusInMeters);
     }
 
     public List<Advertisement> findByLocation(String city) {

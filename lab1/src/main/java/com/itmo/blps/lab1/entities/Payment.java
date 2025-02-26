@@ -24,7 +24,7 @@ public class Payment {
     private PaymentProvider provider;
 
     // The promotion being paid for
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "promotion_id", nullable = false)
     private Promotion promotion;
 

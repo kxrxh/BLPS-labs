@@ -31,16 +31,19 @@ public class POIService {
     @Autowired
     private GeoService geoService;
 
+    @Autowired
+    private LocationService locationService;
+
     @Value("${poi.search-radius-meters:1000}")
     private Double defaultSearchRadius;
 
-    public void addPOI(PoiDto poiDto) {
+    public POI addPOI(PoiDto poiDto) {
         POI poi = POI.builder()
                 .name(poiDto.getName())
                 .type(poiDto.getType())
                 .position(geoService.getPositionFromAddress(poiDto.getAddress(), poiDto.getCity()))
                 .build();
-        poiRepository.save(poi);
+        return poiRepository.save(poi);
     }
 
     public List<POI> getPOIs() {
@@ -54,21 +57,22 @@ public class POIService {
     public Advertisement updateAdvertisementPOIs(Long id) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found: " + id));
+        
         // Find all POIs near the advertisement
         for (POIType poiType : POIType.values()) {
-            List<POI> nearbyPOIs = poiRepository.findNearbyPOIsByType(
+            List<POI> nearbyPOIs = locationService.findNearbyPOIsByType(
                     advertisement.getPosition().getLatitude(),
                     advertisement.getPosition().getLongitude(),
                     defaultSearchRadius,
-                    poiType.name());
+                    poiType);
 
             // Create AdvertisementPOI entries for each nearby POI
             for (POI poi : nearbyPOIs) {
                 AdvertisementPOI adPoi = new AdvertisementPOI();
                 adPoi.setAdvertisement(advertisement);
                 adPoi.setPoi(poi);
-                // Calculate distance using GeoService
-                double distance = geoService.calculateDistance(
+                // Calculate distance using LocationService
+                double distance = locationService.calculateDistance(
                         advertisement.getPosition().getLatitude(),
                         advertisement.getPosition().getLongitude(),
                         poi.getPosition().getLatitude(),

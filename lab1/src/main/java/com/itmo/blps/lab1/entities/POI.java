@@ -28,6 +28,6 @@ public class POI {
     private POIType type;
 
     @NotNull
-    @Embedded
+    @Embedded   
     private Position position;
 }

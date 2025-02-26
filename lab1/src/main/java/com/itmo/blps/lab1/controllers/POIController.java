@@ -29,8 +29,8 @@ public class POIController {
     @PostMapping("/")
     @Operation(summary = "Add POI", description = "Adds a new Point of Interest")
     @ApiResponse(responseCode = "200", description = "Successfully added POI")
-    public void addPOI(@RequestBody @Valid PoiDto poiDto) {
-        poiService.addPOI(poiDto);
+    public ResponseEntity<POI> addPOI(@RequestBody @Valid PoiDto poiDto) {
+        return ResponseEntity.ok(poiService.addPOI(poiDto));
     }
 
     @GetMapping("/")
@@ -53,7 +53,8 @@ public class POIController {
     @ApiResponse(responseCode = "200", description = "Successfully updated advertisement POIs")
     @ApiResponse(responseCode = "404", description = "Advertisement not found")
     @ApiResponse(responseCode = "400", description = "Invalid advertisement ID")
-    public void updateAdvertisementPOIs(@PathVariable Long id) {
+    public ResponseEntity<Void> updateAdvertisementPOIs(@PathVariable Long id) {
         poiService.updateAdvertisementPOIs(id);
+        return ResponseEntity.ok().build();
     }
 }
