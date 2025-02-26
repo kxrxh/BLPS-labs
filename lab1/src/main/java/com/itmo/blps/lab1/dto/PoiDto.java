@@ -1,6 +1,8 @@
 package com.itmo.blps.lab1.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.itmo.blps.lab1.entities.POIType;
+import com.itmo.blps.lab1.utils.POITypeDeserializer;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,5 +28,6 @@ public class PoiDto {
     private String city;
 
     @NotNull(message = "Type is required")
+    @JsonDeserialize(using = POITypeDeserializer.class)
     private POIType type;
 }

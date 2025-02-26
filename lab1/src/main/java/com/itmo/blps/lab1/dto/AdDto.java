@@ -1,6 +1,8 @@
 package com.itmo.blps.lab1.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.itmo.blps.lab1.entities.RealEstateType;
+import com.itmo.blps.lab1.utils.RealEstateTypeDeserializer;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -32,5 +34,6 @@ public class AdDto {
     private String city;
 
     @NotNull(message = "Real estate type is required")
+    @JsonDeserialize(using = RealEstateTypeDeserializer.class)
     private RealEstateType realEstateType;
 }
