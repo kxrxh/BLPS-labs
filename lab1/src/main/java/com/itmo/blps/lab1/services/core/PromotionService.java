@@ -52,6 +52,8 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
 
+        promotion.setName(promotionDto.getName());
+        promotion.setDescription(promotionDto.getDescription());
         promotion.setPrice(promotionDto.getPrice());
 
         return promotionRepository.save(promotion);
