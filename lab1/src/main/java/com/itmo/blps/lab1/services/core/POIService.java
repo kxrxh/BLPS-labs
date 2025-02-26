@@ -10,11 +10,12 @@ import com.itmo.blps.lab1.repositories.AdvertisementPOIRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class POIService {
@@ -54,14 +55,17 @@ public class POIService {
         return poiRepository.findById(id);
     }
 
+    @Transactional
     public Advertisement updateAdvertisementPOIs(Long id) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found: " + id));
-        
-        // Delete existing POI associations
-        advertisementPOIRepository.deleteByAdvertisementId(id);
-        
-        // Find all POIs near the advertisement
+
+        // Get existing POIs
+        Map<Long, AdvertisementPOI> existingPoisMap = advertisementPOIRepository.findByAdvertisementId(id)
+                .stream()
+                .collect(Collectors.toMap(poi -> poi.getPoi().getId(), poi -> poi));
+
+        // Find and update nearby POIs
         for (POIType poiType : POIType.values()) {
             List<POI> nearbyPOIs = locationService.findNearbyPOIsByType(
                     advertisement.getPosition().getLatitude(),
@@ -69,26 +73,25 @@ public class POIService {
                     defaultSearchRadius,
                     poiType);
 
-            // Create AdvertisementPOI entries for each nearby POI
             for (POI poi : nearbyPOIs) {
-                Optional<AdvertisementPOI> existingAdPoi = advertisementPOIRepository
-                    .findByAdvertisementIdAndPoiId(advertisement.getId(), poi.getId());
-                
-                if (existingAdPoi.isEmpty()) {
-                    AdvertisementPOI adPoi = new AdvertisementPOI();
-                    adPoi.setAdvertisement(advertisement);
-                    adPoi.setPoi(poi);
-                    // Calculate distance using LocationService
-                    double distance = locationService.calculateDistance(
-                            advertisement.getPosition().getLatitude(),
-                            advertisement.getPosition().getLongitude(),
-                            poi.getPosition().getLatitude(),
-                            poi.getPosition().getLongitude());
-                    adPoi.setDistanceInMeters(distance);
-                    advertisementPOIRepository.save(adPoi);
-                }
+                AdvertisementPOI adPoi = existingPoisMap.computeIfAbsent(poi.getId(), k -> {
+                    AdvertisementPOI newAdPoi = new AdvertisementPOI();
+                    newAdPoi.setAdvertisement(advertisement);
+                    newAdPoi.setPoi(poi);
+                    return newAdPoi;
+                });
+
+                // Update distance
+                double distance = locationService.calculateDistance(
+                        advertisement.getPosition().getLatitude(),
+                        advertisement.getPosition().getLongitude(),
+                        poi.getPosition().getLatitude(),
+                        poi.getPosition().getLongitude());
+                adPoi.setDistanceInMeters(distance);
+                advertisementPOIRepository.save(adPoi);
             }
         }
+
         return advertisement;
     }
 }
