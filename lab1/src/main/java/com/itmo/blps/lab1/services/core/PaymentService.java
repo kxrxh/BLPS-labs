@@ -37,10 +37,6 @@ public class PaymentService {
     @Autowired
     private PromotionRepository promotionRepository;
 
-    // Check if a promotion already has a successful payment
-    private boolean hasSuccessfulPayment(Long promotionId) {
-        return paymentRepository.findByPromotionIdAndStatus(promotionId, PaymentStatus.SUCCESS).isPresent();
-    }
 
     // Step 1. Retrieve available payment providers from the database.
     public List<PaymentProvider> getAvailableProviders() {
@@ -53,11 +49,6 @@ public class PaymentService {
     }
 
     public Payment createPayment(PaymentDto paymentDto) {
-        // Check if promotion already has a successful payment
-        if (hasSuccessfulPayment(paymentDto.getPromotionId())) {
-            throw new IllegalStateException("This promotion has already been paid for");
-        }
-
         Payment payment = new Payment();
         payment.setProvider(providerRepository.findById(paymentDto.getProviderId())
                 .orElseThrow(() -> new NotFoundException("Provider not found: " + paymentDto.getProviderId())));

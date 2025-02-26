@@ -55,6 +55,20 @@ public class PromotionService {
     public void deletePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
+
+        // Find and update all advertisements with this promotion
+        List<Advertisement> advertisements = advertisementRepository.findAll().stream()
+                .filter(ad -> ad.getPromotion() != null && ad.getPromotion().getId().equals(id))
+                .toList();
+
+        // Remove promotion from all associated advertisements
+        for (Advertisement ad : advertisements) {
+            ad.setPromotion(null);
+            ad.setIsPromoted(false);
+            advertisementRepository.save(ad);
+        }
+
+        // Now we can safely delete the promotion
         promotionRepository.delete(promotion);
     }
 

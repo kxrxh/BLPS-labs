@@ -2,6 +2,7 @@ package com.itmo.blps.lab1.services.auth;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,9 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public String register(AuthRequest request) {
+        if (userService.getUserByUsername(request.getUsername()) != null) {
+            return "User already exists";
+        }
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -37,14 +41,18 @@ public class AuthService {
     }
 
     public String login(AuthRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
 
         var user = userService
                 .userDetailsService()
                 .loadUserByUsername(request.getUsername());
 
-        var jwtToken = jwtService.generateToken(user);
-        return jwtToken;
+            var jwtToken = jwtService.generateToken(user);
+            return jwtToken;
+        } catch (BadCredentialsException e) {
+            return "Invalid credentials";
+        }
     }
 }
