@@ -71,6 +71,10 @@ public class PaymentService {
                 .orElseThrow(() -> new NotFoundException(
                         "Promotion not found: " + payment.getAdvertisement().getPromotion().getId())));
 
+        if (paymentDto.getAmount() < payment.getAdvertisement().getPromotion().getPrice()) {
+            throw new BadRequestException("Amount is less than the promotion price");
+        }
+
         payment.setAmount(paymentDto.getAmount());
         payment.setStatus(PaymentStatus.PENDING);
 

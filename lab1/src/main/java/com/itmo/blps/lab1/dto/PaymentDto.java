@@ -1,5 +1,6 @@
 package com.itmo.blps.lab1.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -18,5 +19,6 @@ public class PaymentDto {
     private Long providerId;
     @NotNull
     @Min(value = 1, message = "Amount must be greater than 0")
+    @Max(value = 100000, message = "Amount must be less than 100000")
     private Double amount;
 }

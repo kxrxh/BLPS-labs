@@ -1,5 +1,6 @@
 package com.itmo.blps.lab1.dto;
 
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,5 +21,6 @@ public class PromotionDto {
     private String description;
     @NotNull
     @Min(value = 1)
+    @Max(value = 100000)
     private Double price;
 }
