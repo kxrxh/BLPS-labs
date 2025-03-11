@@ -87,7 +87,6 @@ public class UserController {
     @RolesAllowed({ "ROLE_USER", "ROLE_ADMIN", "ROLE_MODERATOR" })
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully updated the user password"),
-            
     })
     public ResponseEntity<User> updateUserPassword(@PathVariable Long id, @RequestBody String password) {
         return ResponseEntity.ok(userService.updateUserPassword(id, password));
