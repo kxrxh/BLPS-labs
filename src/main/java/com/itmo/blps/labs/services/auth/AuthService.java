@@ -12,6 +12,8 @@ import com.itmo.blps.labs.entities.User;
 import com.itmo.blps.labs.exception.BadRequestException;
 import com.itmo.blps.labs.services.core.UserService;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class AuthService {
     @Autowired

@@ -41,15 +41,18 @@ public class PaymentService {
     private PromotionRepository promotionRepository;
 
     // Step 1. Retrieve available payment providers from the database.
+    @Transactional(readOnly = true)
     public List<PaymentProvider> getAvailableProviders() {
         return providerRepository.findAll();
     }
 
+    @Transactional
     public void setPaymentStatus(Payment payment, PaymentStatus status) {
         payment.setStatus(status);
         paymentRepository.save(payment);
     }
 
+    @Transactional
     public Payment createPayment(PaymentDto paymentDto) {
         Payment payment = new Payment();
 
@@ -111,6 +114,7 @@ public class PaymentService {
         }
     }
 
+    @Transactional(readOnly = true)
     private boolean processPaymentWithProvider(Payment payment) {
         if (Math.random() > 0.5) {
             return true;
@@ -118,6 +122,7 @@ public class PaymentService {
         return false;
     }
 
+    @Transactional
     private String applyPromotion(Payment payment) {
         try {
             Promotion promotion = payment.getPromotion();
@@ -139,15 +144,18 @@ public class PaymentService {
         }
     }
 
+    @Transactional(readOnly = true)
     public List<Payment> getPayments() {
         return paymentRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Payment getPaymentById(Long id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment not found with id: " + id));
     }
 
+    @Transactional(readOnly = true)
     public boolean isPaymentOwner(Long paymentId, UserDetails principal) {
         Payment payment = getPaymentById(paymentId);
         return payment.getPayer().getUsername().equals(principal.getUsername());

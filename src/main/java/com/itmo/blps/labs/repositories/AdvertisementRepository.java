@@ -1,9 +1,10 @@
 package com.itmo.blps.labs.repositories;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.itmo.blps.labs.entities.Advertisement;
@@ -23,7 +24,11 @@ public interface AdvertisementRepository extends JpaRepository<Advertisement, Lo
 
     List<Advertisement> findByPriceLessThan(Double price);
 
-    Optional<Advertisement> findByPromotionId(Long promotionId);
+    List<Advertisement> findByPromotionId(Long promotionId);
 
     List<Advertisement> findByPosition_City(String city);
+
+    @Modifying
+    @Query("UPDATE Advertisement a SET a.promotion = null, a.isPromoted = :isPromoted WHERE a.promotion.id = :promotionId")
+    void updatePromotionStatusBatch(boolean isPromoted, Long promotionId);
 }

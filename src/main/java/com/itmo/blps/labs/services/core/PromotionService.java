@@ -2,6 +2,8 @@ package com.itmo.blps.labs.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itmo.blps.labs.dto.PromotionDto;
 import com.itmo.blps.labs.entities.Promotion;
@@ -28,26 +30,32 @@ public class PromotionService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Promotion createPromotion(PromotionDto promotionDto) {
         Promotion promotion = new Promotion();
         promotion.setName(promotionDto.getName());
         promotion.setDescription(promotionDto.getDescription());
         promotion.setPrice(promotionDto.getPrice());
+        promotion.setIsActive(true); // Set default state
         return promotionRepository.save(promotion);
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<Promotion> getAllPromotions() {
         return promotionRepository.findAll();
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public List<Promotion> getActivePromotions() {
         return promotionRepository.findByIsActiveTrue();
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.READ_COMMITTED)
     public Optional<Promotion> getPromotionById(Long id) {
         return promotionRepository.findById(id);
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public Promotion updatePromotion(Long id, PromotionDto promotionDto) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
@@ -59,30 +67,27 @@ public class PromotionService {
         return promotionRepository.save(promotion);
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE)
     public void deletePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
 
-        // Find and update all advertisements with this promotion
-        List<Advertisement> advertisements = advertisementRepository.findAll().stream()
-                .filter(ad -> ad.getPromotion() != null && ad.getPromotion().getId().equals(id))
-                .toList();
+        // Найти все связанные объявления одним запросом
+        List<Advertisement> advertisements = advertisementRepository.findByPromotionId(id);
 
-        // Remove promotion from all associated advertisements
-        for (Advertisement ad : advertisements) {
-            ad.setPromotion(null);
-            ad.setIsPromoted(false);
-            advertisementRepository.save(ad);
+        // Обновить все объявления одной операцией
+        if (!advertisements.isEmpty()) {
+            advertisementRepository.updatePromotionStatusBatch(false, id);
         }
 
-        // Delete all payment records associated with this promotion
-        List<Payment> payments = paymentRepository.findByPromotionId(id);
-        paymentRepository.deleteAll(payments);
+        // Удалить все платежи, связанные с этой акцией
+        paymentRepository.deleteByPromotionId(id);
 
-        // Now we can safely delete the promotion
+        // Удалить саму акцию
         promotionRepository.delete(promotion);
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void activatePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
@@ -90,23 +95,15 @@ public class PromotionService {
         promotionRepository.save(promotion);
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ)
     public void deactivatePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
 
-        // Find and update all advertisements with this promotion
-        List<Advertisement> advertisements = advertisementRepository.findAll().stream()
-                .filter(ad -> ad.getPromotion() != null && ad.getPromotion().getId().equals(id))
-                .toList();
+        // Обновить все связанные объявления одной операцией
+        advertisementRepository.updatePromotionStatusBatch(false, id);
 
-        // Remove promotion from all associated advertisements
-        for (Advertisement ad : advertisements) {
-            ad.setPromotion(null);
-            ad.setIsPromoted(false);
-            advertisementRepository.save(ad);
-        }
-
-        // Deactivate the promotion
+        // Деактивировать акцию
         promotion.setIsActive(false);
         promotionRepository.save(promotion);
     }

@@ -2,6 +2,7 @@ package com.itmo.blps.labs.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itmo.blps.labs.dto.AdDto;
 import com.itmo.blps.labs.dto.AdvertisementResponseDto;
@@ -35,6 +36,7 @@ public class AdvertisementService {
     @Autowired
     private AdvertisementPOIRepository advertisementPOIRepository;
 
+    @Transactional
     public AdvertisementResponseDto createAdvertisement(AdDto adDto) {
         Advertisement advertisement = Advertisement.builder()
                 .name(adDto.getTitle())
@@ -51,6 +53,7 @@ public class AdvertisementService {
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
+    @Transactional(readOnly = true)
     public Optional<AdvertisementResponseDto> getAdvertisementById(Long id) {
         Optional<Advertisement> advertisement = advertisementRepository.findById(id);
         if (advertisement.isPresent()) {
@@ -61,6 +64,7 @@ public class AdvertisementService {
         return Optional.empty();
     }
 
+    @Transactional(readOnly = true)
     public List<AdvertisementResponseDto> getAllAdvertisements() {
         List<Advertisement> advertisements = advertisementRepository.findAll();
         return advertisements.stream()
@@ -72,6 +76,7 @@ public class AdvertisementService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public AdvertisementResponseDto addPromotion(Long id, Long promotionId) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
@@ -91,6 +96,7 @@ public class AdvertisementService {
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
+    @Transactional
     public AdvertisementResponseDto removePromotion(Long id) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
@@ -102,6 +108,7 @@ public class AdvertisementService {
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
+    @Transactional(readOnly = true)
     public List<Advertisement> getAdvertisementsByAuthor(Long id) {
         return advertisementRepository.findByAuthorId(id);
     }

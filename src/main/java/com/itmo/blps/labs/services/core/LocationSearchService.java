@@ -3,6 +3,7 @@ package com.itmo.blps.labs.services.core;
 import com.itmo.blps.labs.entities.Advertisement;
 import com.itmo.blps.labs.repositories.AdvertisementRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -20,14 +21,17 @@ public class LocationSearchService {
     @Value("${search.default-radius-meters:5000}")
     private Double defaultSearchRadius;
 
+    @Transactional(readOnly = true)
     public List<Advertisement> findNearbyAdvertisements(Double latitude, Double longitude) {
         return locationService.findNearbyAdvertisements(latitude, longitude, defaultSearchRadius);
     }
 
+    @Transactional(readOnly = true)
     public List<Advertisement> findNearbyAdvertisements(Double latitude, Double longitude, Double radiusInMeters) {
         return locationService.findNearbyAdvertisements(latitude, longitude, radiusInMeters);
     }
 
+    @Transactional(readOnly = true)
     public List<Advertisement> findByLocation(String city) {
         return advertisementRepository.findByPosition_City(city);
     }

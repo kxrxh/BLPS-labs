@@ -38,6 +38,7 @@ public class POIService {
     @Value("${poi.search-radius-meters:5000}")
     private Double defaultSearchRadius;
 
+    @Transactional
     public POI addPOI(PoiDto poiDto) {
         POI poi = POI.builder()
                 .name(poiDto.getName())
@@ -47,10 +48,12 @@ public class POIService {
         return poiRepository.save(poi);
     }
 
+    @Transactional(readOnly = true)
     public List<POI> getPOIs() {
         return poiRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Optional<POI> getPOIById(Long id) {
         return poiRepository.findById(id);
     }

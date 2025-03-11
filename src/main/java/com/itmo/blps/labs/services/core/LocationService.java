@@ -8,6 +8,7 @@ import com.itmo.blps.labs.repositories.AdvertisementRepository;
 import com.itmo.blps.labs.repositories.POIRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +24,7 @@ public class LocationService {
 
     private static final double EARTH_RADIUS_METERS = 6371000; // Earth's radius in meters
 
+    @Transactional(readOnly = true)
     public List<Advertisement> findNearbyAdvertisements(Double latitude, Double longitude, Double radiusInMeters) {
         List<Advertisement> allAdvertisements = advertisementRepository.findAll();
         
@@ -42,6 +44,7 @@ public class LocationService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<POI> findNearbyPOIsByType(Double latitude, Double longitude, Double radiusInMeters, POIType poiType) {
         List<POI> poisOfType = poiRepository.findByType(poiType);
         
