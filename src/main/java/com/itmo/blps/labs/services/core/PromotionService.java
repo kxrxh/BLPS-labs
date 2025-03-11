@@ -11,7 +11,6 @@ import com.itmo.blps.labs.repositories.PromotionRepository;
 import com.itmo.blps.labs.repositories.AdvertisementRepository;
 import com.itmo.blps.labs.repositories.PaymentRepository;
 import com.itmo.blps.labs.entities.Advertisement;
-import com.itmo.blps.labs.entities.Payment;
 
 import io.basc.framework.lang.NotFoundException;
 
