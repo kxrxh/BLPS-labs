@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PoiDto;
@@ -28,6 +29,7 @@ public class POIController {
 
     @PostMapping("/")
     @Operation(summary = "Add POI", description = "Adds a new Point of Interest")
+    @PreAuthorize("hasAuthority('poi:create')")
     @ApiResponse(responseCode = "200", description = "Successfully added POI")
     public ResponseEntity<POI> addPOI(@RequestBody @Valid PoiDto poiDto) {
         return ResponseEntity.ok(poiService.addPOI(poiDto));
@@ -35,6 +37,7 @@ public class POIController {
 
     @GetMapping("/")
     @Operation(summary = "Get all POIs", description = "Retrieves all Points of Interest")
+    @PreAuthorize("hasAuthority('poi:read')")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved all POIs")
     public ResponseEntity<List<POI>> getPOIs() {
         return ResponseEntity.ok(poiService.getPOIs());
@@ -42,6 +45,7 @@ public class POIController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get POI by ID", description = "Retrieves a Point of Interest by its ID")
+    @PreAuthorize("hasAuthority('poi:read')")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved POI")
     @ApiResponse(responseCode = "404", description = "POI not found")
     public ResponseEntity<POI> getPOIById(@PathVariable Long id) {
@@ -50,6 +54,7 @@ public class POIController {
 
     @PostMapping("/update-advertisement-pois/{id}")
     @Operation(summary = "Update advertisement POIs", description = "Updates the Points of Interest associated with an advertisement based on its location")
+    @PreAuthorize("hasPermission(#id, 'Advertisement', 'edit')")
     @ApiResponse(responseCode = "200", description = "Successfully updated advertisement POIs")
     @ApiResponse(responseCode = "404", description = "Advertisement not found")
     @ApiResponse(responseCode = "400", description = "Invalid advertisement ID")

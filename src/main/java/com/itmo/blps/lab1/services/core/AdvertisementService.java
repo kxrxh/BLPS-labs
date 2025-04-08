@@ -2,11 +2,13 @@ package com.itmo.blps.lab1.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Promotion;
+import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.exception.BadRequestException;
 import com.itmo.blps.lab1.entities.AdvertisementPOI;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
@@ -99,5 +101,25 @@ public class AdvertisementService {
         advertisement = advertisementRepository.save(advertisement);
         List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
+    }
+
+    /**
+     * Checks if the user with the given userId is the owner of the advertisement
+     * with the given advertisementId.
+     *
+     * @param userId The ID of the user.
+     * @param advertisementId The ID of the advertisement.
+     * @return true if the user is the owner, false otherwise.
+     */
+    @Transactional(readOnly = true)
+    public boolean isOwner(Long userId, Long advertisementId) {
+        if (userId == null || advertisementId == null) {
+            return false;
+        }
+        return advertisementRepository.findById(advertisementId)
+                .map(Advertisement::getAuthor)
+                .map(User::getId)
+                .map(ownerId -> ownerId.equals(userId))
+                .orElse(false);
     }
 }

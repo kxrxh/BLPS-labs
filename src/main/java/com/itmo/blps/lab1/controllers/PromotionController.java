@@ -1,6 +1,8 @@
 package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.entities.Promotion;
@@ -8,7 +10,6 @@ import com.itmo.blps.lab1.dto.PromotionDto;
 import com.itmo.blps.lab1.dto.error.ErrorResponse;
 import com.itmo.blps.lab1.services.core.PromotionService;
 
-import io.basc.framework.lang.NotFoundException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,6 +32,7 @@ public class PromotionController {
 
     @PostMapping
     @Operation(summary = "Create a new promotion", description = "Creates a new promotion with the provided details")
+    @PreAuthorize("hasAuthority('promotion:create')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Promotion created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
@@ -41,6 +43,7 @@ public class PromotionController {
 
     @GetMapping
     @Operation(summary = "Get all promotions", description = "Retrieves all promotions")
+    @PreAuthorize("hasAuthority('promotion:read')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all promotions"),
     })
@@ -50,6 +53,7 @@ public class PromotionController {
 
     @GetMapping("/active")
     @Operation(summary = "Get active promotions", description = "Retrieves all active promotions")
+    @PreAuthorize("hasAuthority('promotion:read')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved active promotions"),
     })
@@ -59,18 +63,21 @@ public class PromotionController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get promotion by ID", description = "Retrieves a promotion by its ID")
+    @PreAuthorize("hasAuthority('promotion:read')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved the promotion"),
             @ApiResponse(responseCode = "400", description = "Invalid ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
             @ApiResponse(responseCode = "404", description = "Promotion not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    public Promotion getPromotionById(@PathVariable Long id) {
+    public ResponseEntity<Promotion> getPromotion(@PathVariable Long id) {
         return promotionService.getPromotionById(id)
-                .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update promotion", description = "Updates an existing promotion")
+    @PreAuthorize("hasAuthority('promotion:update')")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Promotion updated successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid input or ID format", content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
@@ -78,5 +85,29 @@ public class PromotionController {
     })
     public Promotion updatePromotion(@PathVariable Long id, @RequestBody @Valid PromotionDto promotionDto) {
         return promotionService.updatePromotion(id, promotionDto);
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete promotion", description = "Deletes a promotion")
+    @PreAuthorize("hasAuthority('promotion:delete')")
+    public ResponseEntity<Void> deletePromotion(@PathVariable Long id) {
+        promotionService.deletePromotion(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/activate")
+    @Operation(summary = "Activate promotion", description = "Activates a promotion")
+    @PreAuthorize("hasAuthority('promotion:update')")
+    public ResponseEntity<Void> activatePromotion(@PathVariable Long id) {
+        promotionService.activatePromotion(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate promotion", description = "Deactivates a promotion")
+    @PreAuthorize("hasAuthority('promotion:update')")
+    public ResponseEntity<Void> deactivatePromotion(@PathVariable Long id) {
+        promotionService.deactivatePromotion(id);
+        return ResponseEntity.noContent().build();
     }
 }

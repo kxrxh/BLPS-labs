@@ -7,12 +7,16 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 
 import java.util.Date;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+
+import org.springframework.security.core.GrantedAuthority;
 
 @Service
 public class JwtService {
@@ -38,8 +42,13 @@ public class JwtService {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
 
+        List<String> roles = userDetails.getAuthorities().stream()
+                                .map(GrantedAuthority::getAuthority)
+                                .collect(Collectors.toList());
+
         return Jwts.builder()
                 .claim("sub", userDetails.getUsername())
+                .claim("roles", roles)
                 .claim("iat", now)
                 .claim("exp", expiryDate)
                 .signWith(key)

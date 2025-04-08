@@ -2,6 +2,7 @@ package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.AdDto;
@@ -30,6 +31,7 @@ public class AdvertisementController {
     @PostMapping
     @Operation(summary = "Create a new advertisement", description = "Creates a new advertisement with the provided details")
     @ApiResponse(responseCode = "200", description = "Advertisement created successfully")
+    @PreAuthorize("hasAuthority('advertisement:create')")
     public AdvertisementResponseDto createAdvertisement(@RequestBody @Valid AdDto adDto) {
         return advertisementService.createAdvertisement(adDto);
     }
@@ -40,6 +42,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved the advertisement"),
             @ApiResponse(responseCode = "404", description = "Advertisement not found", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    @PreAuthorize("hasAuthority('advertisement:read')")
     public ResponseEntity<AdvertisementResponseDto> getAdvertisement(@PathVariable Long id) {
         return advertisementService.getAdvertisementById(id)
                 .map(ResponseEntity::ok)
@@ -52,6 +55,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully retrieved all advertisements"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    @PreAuthorize("hasAuthority('advertisement:read')")
     public List<AdvertisementResponseDto> getAllAdvertisements() {
         return advertisementService.getAllAdvertisements();
     }
@@ -62,6 +66,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    @PreAuthorize("hasPermission(#id, 'Advertisement', 'apply_promotion')")
     public ResponseEntity<AdvertisementResponseDto> addPromotion(@RequestParam Long id, @RequestParam Long promotionId) {
         return ResponseEntity.ok(advertisementService.addPromotion(id, promotionId));
     }
@@ -72,6 +77,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully removed promotion from advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
+    @PreAuthorize("hasPermission(#id, 'Advertisement', 'apply_promotion')")
     public ResponseEntity<AdvertisementResponseDto> removePromotion(@PathVariable Long id) {
         return ResponseEntity.ok(advertisementService.removePromotion(id));
     }

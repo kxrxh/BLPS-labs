@@ -2,6 +2,7 @@ package com.itmo.blps.lab1.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
@@ -31,13 +32,15 @@ public class PaymentController {
     @GetMapping("/providers")
     @Operation(summary = "Get available payment providers", description = "Retrieves available payment providers from the database")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved payment providers")
-    public List<PaymentProvider> getAvailableProviders() {
+    @PreAuthorize("isAuthenticated()")
+    public List<PaymentProvider> getPaymentProviders() {
         return paymentService.getAvailableProviders();
     }
 
     @PostMapping("/process")
     @Operation(summary = "Process payment", description = "Processes payment for promotion and applies promotion if successful")
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
+    @PreAuthorize("hasAuthority('payment:process')")
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto) {
         Payment payment = paymentService.createPayment(paymentDto);
         String paymentInfo = paymentService.processPayment(payment);
