@@ -74,6 +74,11 @@ public class PaymentService {
                         () -> new NotFoundException("Advertisement not found: " + paymentDto.getAdvertisementId()));
         payment.setAdvertisement(advertisement);
 
+        // Ensure the advertisement has an author before proceeding
+        if (advertisement.getAuthor() == null) {
+             throw new IllegalStateException("Advertisement with ID " + advertisement.getId() + " has no author associated.");
+        }
+
         // Verify ownership or admin role
         boolean isAdmin = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"));
         boolean isOwner = advertisement.getAuthor().getUsername().equals(userDetails.getUsername());
