@@ -83,7 +83,6 @@ public class PaymentService {
         boolean isAdmin = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"));
         boolean isOwner = advertisement.getAuthor().getUsername().equals(userDetails.getUsername());
         if (!isOwner && !isAdmin) {
-            // Use HttpClientErrorException with 401 status (as previously decided)
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "User does not own the advertisement for this promotion and is not an admin.");
         }
 

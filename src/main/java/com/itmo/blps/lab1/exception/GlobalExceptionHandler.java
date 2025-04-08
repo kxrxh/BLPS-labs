@@ -16,6 +16,7 @@ import com.itmo.blps.lab1.dto.error.ErrorResponse;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpClientErrorException;
 
 import io.basc.framework.lang.NotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,6 +86,18 @@ public class GlobalExceptionHandler {
                                 .path(request.getRequestURI())
                                 .build();
                 return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+        }
+
+        @ExceptionHandler(HttpClientErrorException.class)
+        public ResponseEntity<ErrorResponse> handleHttpClientErrorException(HttpClientErrorException ex, HttpServletRequest request) {
+                ErrorResponse errorResponse = ErrorResponse.builder()
+                                .timestamp(LocalDateTime.now())
+                                .status(ex.getStatusCode().value())
+                                .error(HttpStatus.valueOf(ex.getStatusCode().value()).getReasonPhrase())
+                                .message(ex.getStatusText())
+                                .path(request.getRequestURI())
+                                .build();
+                return new ResponseEntity<>(errorResponse, ex.getStatusCode());
         }
 
         @ExceptionHandler(RuntimeException.class)
