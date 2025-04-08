@@ -2,6 +2,7 @@ package com.itmo.blps.lab1.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itmo.blps.lab1.dto.PromotionDto;
 import com.itmo.blps.lab1.entities.Promotion;
@@ -28,6 +29,7 @@ public class PromotionService {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    @Transactional
     public Promotion createPromotion(PromotionDto promotionDto) {
         Promotion promotion = new Promotion();
         promotion.setName(promotionDto.getName());
@@ -36,18 +38,22 @@ public class PromotionService {
         return promotionRepository.save(promotion);
     }
 
+    @Transactional(readOnly = true)
     public List<Promotion> getAllPromotions() {
         return promotionRepository.findAll();
     }
 
+    @Transactional(readOnly = true)
     public List<Promotion> getActivePromotions() {
         return promotionRepository.findByIsActiveTrue();
     }
 
+    @Transactional(readOnly = true)
     public Optional<Promotion> getPromotionById(Long id) {
         return promotionRepository.findById(id);
     }
 
+    @Transactional
     public Promotion updatePromotion(Long id, PromotionDto promotionDto) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
@@ -59,6 +65,7 @@ public class PromotionService {
         return promotionRepository.save(promotion);
     }
 
+    @Transactional
     public void deletePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
@@ -83,6 +90,7 @@ public class PromotionService {
         promotionRepository.delete(promotion);
     }
 
+    @Transactional
     public void activatePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
@@ -90,6 +98,7 @@ public class PromotionService {
         promotionRepository.save(promotion);
     }
 
+    @Transactional
     public void deactivatePromotion(Long id) {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));

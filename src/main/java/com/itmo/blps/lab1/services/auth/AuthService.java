@@ -11,6 +11,9 @@ import com.itmo.blps.lab1.dto.auth.AuthRequest;
 import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.exception.BadRequestException;
 import com.itmo.blps.lab1.services.core.UserService;
+import com.itmo.blps.lab1.repositories.RoleRepository;
+import com.itmo.blps.lab1.config.PermissionDefinitions;
+import java.util.Set;
 
 @Service
 public class AuthService {
@@ -26,13 +29,21 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RoleRepository roleRepository;
+
     public String register(AuthRequest request) {
         if (userService.getUserByUsername(request.getUsername()).isPresent()) {
             throw new BadRequestException("User already exists");
         }
+
+        var userRole = roleRepository.findByName(PermissionDefinitions.ROLE_USER)
+                .orElseThrow(() -> new IllegalStateException("Default USER role not found"));
+
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .roles(Set.of(userRole))
                 .build();
 
         user = userService.save(user);

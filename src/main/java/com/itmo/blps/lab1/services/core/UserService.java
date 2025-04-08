@@ -5,6 +5,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.repositories.UserRepository;
@@ -17,14 +18,17 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public User getUserById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    @Transactional(readOnly = true)
     public Optional<User> getUserByUsername(String username) {
         return userRepository.findByUsername(username);
     }
 
+    @Transactional(readOnly = true)
     public User getUserByUsernameAndPassword(String username, String password) {
         return userRepository.findByUsernameAndPassword(username, password)
                 .orElseThrow(() -> new NotFoundException("User not found"));

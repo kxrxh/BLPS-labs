@@ -54,6 +54,7 @@ public class AdvertisementService {
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
+    @Transactional(readOnly = true)
     public Optional<AdvertisementResponseDto> getAdvertisementById(Long id) {
         Optional<Advertisement> advertisement = advertisementRepository.findById(id);
         if (advertisement.isPresent()) {
@@ -64,6 +65,7 @@ public class AdvertisementService {
         return Optional.empty();
     }
 
+    @Transactional(readOnly = true)
     public List<AdvertisementResponseDto> getAllAdvertisements() {
         List<Advertisement> advertisements = advertisementRepository.findAll();
         return advertisements.stream()
