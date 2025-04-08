@@ -1,7 +1,10 @@
 package com.itmo.blps.lab1.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,8 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.springframework.web.client.HttpClientErrorException;
 
 @Service
 public class PaymentService {
@@ -52,15 +57,24 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
-    public Payment createPayment(PaymentDto paymentDto) {
+    public Payment createPayment(PaymentDto paymentDto, UserDetails userDetails) {
         Payment payment = new Payment();
 
         payment.setProvider(providerRepository.findById(paymentDto.getProviderId())
                 .orElseThrow(() -> new NotFoundException("Provider not found: " + paymentDto.getProviderId())));
 
-        payment.setAdvertisement(advertisementRepository.findById(paymentDto.getAdvertisementId())
+        Advertisement advertisement = advertisementRepository.findById(paymentDto.getAdvertisementId())
                 .orElseThrow(
-                        () -> new NotFoundException("Advertisement not found: " + paymentDto.getAdvertisementId())));
+                        () -> new NotFoundException("Advertisement not found: " + paymentDto.getAdvertisementId()));
+        payment.setAdvertisement(advertisement);
+
+        // Verify ownership or admin role
+        boolean isAdmin = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"));
+        boolean isOwner = advertisement.getAuthor().getUsername().equals(userDetails.getUsername());
+        if (!isOwner && !isAdmin) {
+            // Use HttpClientErrorException with 401 status (as previously decided)
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED, "User does not own the advertisement for this promotion and is not an admin.");
+        }
 
         if (payment.getAdvertisement().getPromotion() == null) {
             throw new BadRequestException("Please select a promotion for this advertisement");
@@ -82,8 +96,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
 
         // Set the current authenticated user as the payer
-        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        payment.setPayer(currentUser);
+        payment.setPayer((User) userDetails);
 
         return paymentRepository.save(payment);
     }

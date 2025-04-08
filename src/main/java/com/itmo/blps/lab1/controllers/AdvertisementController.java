@@ -66,7 +66,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully added promotion to advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @PreAuthorize("hasPermission(#id, 'Advertisement', 'apply_promotion')")
+    @PreAuthorize("hasRole('ADMIN') or hasPermission(#id, 'Advertisement', 'apply_promotion')")
     public ResponseEntity<AdvertisementResponseDto> addPromotion(@RequestParam Long id, @RequestParam Long promotionId) {
         return ResponseEntity.ok(advertisementService.addPromotion(id, promotionId));
     }
@@ -77,7 +77,7 @@ public class AdvertisementController {
             @ApiResponse(responseCode = "200", description = "Successfully removed promotion from advertisement"),
             @ApiResponse(responseCode = "403", description = "Forbidden", content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    @PreAuthorize("hasPermission(#id, 'Advertisement', 'apply_promotion')")
+    @PreAuthorize("hasRole('ADMIN') or hasPermission(#id, 'Advertisement', 'apply_promotion')")
     public ResponseEntity<AdvertisementResponseDto> removePromotion(@PathVariable Long id) {
         return ResponseEntity.ok(advertisementService.removePromotion(id));
     }

@@ -64,9 +64,11 @@ public class User implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     @Builder.Default
+    @JsonIgnore
     private Set<Role> roles = new HashSet<>();
 
     @Override
+    @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
         List<GrantedAuthority> roleAuthorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))

@@ -15,7 +15,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import com.itmo.blps.lab1.entities.PaymentProvider;
+import com.itmo.blps.lab1.repositories.PaymentProviderRepository;
 
 @Component
 @RequiredArgsConstructor
@@ -26,6 +30,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final PaymentProviderRepository paymentProviderRepository;
 
     @Value("${default.admin.username}")
     private String defaultAdminUsername;
@@ -59,6 +64,7 @@ public class DataInitializer implements CommandLineRunner {
         });
 
         createAdminUserIfNotExists();
+        createDefaultPaymentProvidersIfNotExists();
     }
 
     private void createAdminUserIfNotExists() {
@@ -78,5 +84,19 @@ public class DataInitializer implements CommandLineRunner {
         } else {
             log.info("Admin user {} already exists.", defaultAdminUsername);
         }
+    }
+
+    private void createDefaultPaymentProvidersIfNotExists() {
+        List<String> defaultProviders = List.of("Credit Card", "PayPal", "Bank Transfer");
+
+        defaultProviders.forEach(name -> {
+            // Check if provider already exists (case-insensitive check might be better)
+            if (paymentProviderRepository.findAll().stream().noneMatch(p -> p.getName().equalsIgnoreCase(name))) {
+                 PaymentProvider provider = new PaymentProvider();
+                 provider.setName(name);
+                 paymentProviderRepository.save(provider);
+                 log.info("Created default payment provider: {}", name);
+             }
+        });
     }
 } 

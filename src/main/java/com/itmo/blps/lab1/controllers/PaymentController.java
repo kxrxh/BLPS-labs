@@ -3,6 +3,8 @@ package com.itmo.blps.lab1.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
@@ -41,8 +43,9 @@ public class PaymentController {
     @Operation(summary = "Process payment", description = "Processes payment for promotion and applies promotion if successful")
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
     @PreAuthorize("hasAuthority('payment:process')")
-    public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto) {
-        Payment payment = paymentService.createPayment(paymentDto);
+    public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto,
+                                                              @AuthenticationPrincipal UserDetails userDetails) {
+        Payment payment = paymentService.createPayment(paymentDto, userDetails);
         String paymentInfo = paymentService.processPayment(payment);
         
         Map<String, Object> response = new HashMap<>();

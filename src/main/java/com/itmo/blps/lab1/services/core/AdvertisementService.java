@@ -14,12 +14,16 @@ import com.itmo.blps.lab1.entities.AdvertisementPOI;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementPOIRepository;
-
+import com.itmo.blps.lab1.services.core.UserService;
 import io.basc.framework.lang.NotFoundException;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+import com.itmo.blps.lab1.security.UserAuthentication;
 
 @Service
 public class AdvertisementService {
@@ -37,14 +41,25 @@ public class AdvertisementService {
     @Autowired
     private AdvertisementPOIRepository advertisementPOIRepository;
 
+    @Autowired
+    private UserService userService;
+
     @Transactional
     public AdvertisementResponseDto createAdvertisement(AdDto adDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof UserAuthentication)) {
+            throw new IllegalStateException("User not properly authenticated.");
+        }
+        Long currentUserId = ((UserAuthentication) authentication).getUserId();
+        User currentUser = userService.getUserById(currentUserId);
+
         Advertisement advertisement = Advertisement.builder()
                 .name(adDto.getTitle())
                 .description(adDto.getDescription())
                 .price(adDto.getPrice())
                 .realEstateType(adDto.getRealEstateType())
                 .position(geoService.getPositionFromAddress(adDto.getAddress(), adDto.getCity()))
+                .author(currentUser)
                 .build();
 
         advertisement = advertisementRepository.save(advertisement);
