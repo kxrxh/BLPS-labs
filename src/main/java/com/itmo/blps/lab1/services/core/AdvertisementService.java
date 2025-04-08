@@ -14,7 +14,6 @@ import com.itmo.blps.lab1.entities.AdvertisementPOI;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementPOIRepository;
-import com.itmo.blps.lab1.services.core.UserService;
 import io.basc.framework.lang.NotFoundException;
 
 import java.util.List;
@@ -24,6 +23,7 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.itmo.blps.lab1.security.UserAuthentication;
+import java.time.LocalDateTime;
 
 @Service
 public class AdvertisementService {
@@ -132,6 +132,8 @@ public class AdvertisementService {
              throw new BadRequestException("No promotion selected for advertisement id: " + id);
         }
 
+        advertisement.setStartDate(LocalDateTime.now());
+        advertisement.setDurationInDays(advertisement.getPromotion().getDurationInDays());
         advertisement.setIsPromoted(true);
         advertisement = advertisementRepository.save(advertisement);
 

@@ -1,6 +1,7 @@
 package com.itmo.blps.lab1.services.core;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -46,6 +47,11 @@ public class PaymentService {
 
     @Autowired
     private AdvertisementService advertisementService;
+
+    // Use @Lazy to prevent circular dependency issues on startup
+    @Lazy
+    @Autowired
+    private PaymentService self;
 
     // Step 1. Retrieve available payment providers from the database.
     public List<PaymentProvider> getAvailableProviders() {
@@ -104,33 +110,55 @@ public class PaymentService {
     // Step 2 & 3. Process payment and apply promotion if payment succeeds.
     @Transactional
     public String processPayment(Payment payment) {
+        Long paymentId = payment.getId(); // Store ID for use in catch blocks
         try {
-            // Mark as pending
+            // Mark as pending (part of the main transaction)
             setPaymentStatus(payment, PaymentStatus.PENDING);
 
             // Simulate payment provider interaction
             boolean paymentSuccessful = processPaymentWithProvider(payment);
 
             if (paymentSuccessful) {
-                // Call AdvertisementService to activate the promotion
-                advertisementService.activatePromotion(payment.getAdvertisement().getId());
-                // Only set status to SUCCESS after promotion activation succeeds
+                // Set success status (part of the main transaction)
                 setPaymentStatus(payment, PaymentStatus.SUCCESS);
+
+                // Simulate error condition for testing transactional rollback
+                if (payment.getAmount() == 999.99) {
+                    throw new RuntimeException("Simulated error after payment success, before promotion activation.");
+                }
+                // Call AdvertisementService to activate the promotion (part of the main transaction)
+                advertisementService.activatePromotion(payment.getAdvertisement().getId());
+
+                // Return success message only if everything completes
                 return "Successful payment and promotion activation.";
             } else {
-                setPaymentStatus(payment, PaymentStatus.FAILED);
+                // Set FAILED status in a new transaction
+                self.updatePaymentStatus(paymentId, PaymentStatus.FAILED);
                 throw new RuntimeException("Payment provider declined the transaction.");
             }
         } catch (NotFoundException e) {
-            setPaymentStatus(payment, PaymentStatus.FAILED);
+            // Set FAILED status in a new transaction before rethrowing
+            self.updatePaymentStatus(paymentId, PaymentStatus.FAILED);
             throw new RuntimeException("Failed to activate promotion: Advertisement not found.", e);
         } catch (BadRequestException e) {
-            setPaymentStatus(payment, PaymentStatus.FAILED);
+            // Set FAILED status in a new transaction before rethrowing
+            self.updatePaymentStatus(paymentId, PaymentStatus.FAILED);
             throw new RuntimeException("Failed to activate promotion: Bad request.", e);
         } catch (Exception e) {
-            setPaymentStatus(payment, PaymentStatus.FAILED);
+            // Set FAILED status in a new transaction before rethrowing
+            self.updatePaymentStatus(paymentId, PaymentStatus.FAILED);
+            // Rethrow to ensure main transaction rollback
             throw new RuntimeException("Payment processing failed: " + e.getMessage(), e);
         }
+    }
+
+    // This method runs in a separate transaction
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void updatePaymentStatus(Long paymentId, PaymentStatus status) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new NotFoundException("Payment not found during status update: " + paymentId));
+        payment.setStatus(status);
+        paymentRepository.save(payment);
     }
 
     private boolean processPaymentWithProvider(Payment payment) {
