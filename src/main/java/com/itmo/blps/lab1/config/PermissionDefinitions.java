@@ -12,7 +12,6 @@ public class PermissionDefinitions {
     public static final String ROLE_MODERATOR = "MODERATOR";
     public static final String ROLE_ADMIN = "ADMIN";
 
-    // Base permission sets for roles
     private static final Set<Permission> USER_PERMISSIONS = EnumSet.of(
             Permission.ADV_READ, Permission.ADV_CREATE, Permission.ADV_UPDATE, Permission.ADV_APPLY_PROMOTION,
             Permission.PROMO_READ,
@@ -21,9 +20,7 @@ public class PermissionDefinitions {
             Permission.LOC_READ);
 
     private static final Set<Permission> MODERATOR_PERMISSIONS = EnumSet.copyOf(
-            // Start with USER permissions
             Stream.concat(USER_PERMISSIONS.stream(),
-                    // Add Moderator specific permissions
                     Stream.of(
                             Permission.ADV_DELETE,
                             Permission.POI_CREATE,
@@ -31,10 +28,8 @@ public class PermissionDefinitions {
                             Permission.POI_DELETE))
                     .collect(Collectors.toSet()));
 
-    private static final Set<Permission> ADMIN_PERMISSIONS = EnumSet.allOf(Permission.class); // Admin gets all enum
-                                                                                              // values
+    private static final Set<Permission> ADMIN_PERMISSIONS = EnumSet.allOf(Permission.class);
 
-    // Expose mappings (Role Name -> Set of Permission Strings)
     public static final Map<String, Set<String>> ROLE_PERMISSIONS = Map.of(
             ROLE_USER, USER_PERMISSIONS.stream().map(Permission::toString).collect(Collectors.toUnmodifiableSet()),
             ROLE_MODERATOR,

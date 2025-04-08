@@ -37,6 +37,7 @@ public class AdvertisementService {
     @Autowired
     private AdvertisementPOIRepository advertisementPOIRepository;
 
+    @Transactional
     public AdvertisementResponseDto createAdvertisement(AdDto adDto) {
         Advertisement advertisement = Advertisement.builder()
                 .name(adDto.getTitle())
@@ -74,6 +75,7 @@ public class AdvertisementService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public AdvertisementResponseDto addPromotion(Long id, Long promotionId) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
@@ -92,6 +94,7 @@ public class AdvertisementService {
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }
 
+    @Transactional
     public AdvertisementResponseDto removePromotion(Long id) {
         Advertisement advertisement = advertisementRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
@@ -99,6 +102,22 @@ public class AdvertisementService {
         advertisement.setPromotion(null);
         advertisement.setIsPromoted(false);
         advertisement = advertisementRepository.save(advertisement);
+        List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
+        return AdvertisementResponseDto.fromEntity(advertisement, pois);
+    }
+
+    @Transactional
+    public AdvertisementResponseDto activatePromotion(Long id) {
+        Advertisement advertisement = advertisementRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
+
+        if (advertisement.getPromotion() == null) {
+             throw new BadRequestException("No promotion selected for advertisement id: " + id);
+        }
+
+        advertisement.setIsPromoted(true);
+        advertisement = advertisementRepository.save(advertisement);
+
         List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
         return AdvertisementResponseDto.fromEntity(advertisement, pois);
     }

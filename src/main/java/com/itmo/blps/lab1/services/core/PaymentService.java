@@ -39,6 +39,9 @@ public class PaymentService {
     @Autowired
     private PromotionRepository promotionRepository;
 
+    @Autowired
+    private AdvertisementService advertisementService;
+
     // Step 1. Retrieve available payment providers from the database.
     public List<PaymentProvider> getAvailableProviders() {
         return providerRepository.findAll();
@@ -89,21 +92,28 @@ public class PaymentService {
     @Transactional
     public String processPayment(Payment payment) {
         try {
-            // Mark as pending and save
+            // Mark as pending
             setPaymentStatus(payment, PaymentStatus.PENDING);
 
-            // Here you would integrate with a real payment provider using
-            // payment.getProvider()
-            // For now, we'll simulate a successful payment
+            // Simulate payment provider interaction
             boolean paymentSuccessful = processPaymentWithProvider(payment);
 
             if (paymentSuccessful) {
+                // Call AdvertisementService to activate the promotion
+                advertisementService.activatePromotion(payment.getAdvertisement().getId());
+                // Only set status to SUCCESS after promotion activation succeeds
                 setPaymentStatus(payment, PaymentStatus.SUCCESS);
-                return applyPromotion(payment);
+                return "Successful payment and promotion activation.";
             } else {
                 setPaymentStatus(payment, PaymentStatus.FAILED);
-                throw new RuntimeException("Transaction failed. Please try again.");
+                throw new RuntimeException("Payment provider declined the transaction.");
             }
+        } catch (NotFoundException e) {
+            setPaymentStatus(payment, PaymentStatus.FAILED);
+            throw new RuntimeException("Failed to activate promotion: Advertisement not found.", e);
+        } catch (BadRequestException e) {
+            setPaymentStatus(payment, PaymentStatus.FAILED);
+            throw new RuntimeException("Failed to activate promotion: Bad request.", e);
         } catch (Exception e) {
             setPaymentStatus(payment, PaymentStatus.FAILED);
             throw new RuntimeException("Payment processing failed: " + e.getMessage(), e);
@@ -111,30 +121,13 @@ public class PaymentService {
     }
 
     private boolean processPaymentWithProvider(Payment payment) {
-        if (Math.random() > 0.5) {
-            return true;
-        }
-        return false;
-    }
-
-    private String applyPromotion(Payment payment) {
+        System.out.println("Simulating payment processing for amount: " + payment.getAmount() + " via provider: " + payment.getProvider().getName());
         try {
-            Promotion promotion = payment.getPromotion();
-            Advertisement advertisement = payment.getAdvertisement();
-
-            if (advertisement == null || promotion == null) {
-                throw new RuntimeException("Advertisement or promotion not found");
-            }
-
-            advertisement.setPromotion(promotion);
-            advertisement.setIsPromoted(true);
-            advertisement.setStartDate(LocalDateTime.now());
-            advertisement.setDurationInDays(30);
-
-            advertisementRepository.save(advertisement);
-            return "Successful payment and promotion connection";
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to apply promotion: " + e.getMessage(), e);
+            Thread.sleep(500);
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            return false;
         }
+        return Math.random() > 0.2;
     }
 }
