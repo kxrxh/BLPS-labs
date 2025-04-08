@@ -27,7 +27,7 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public String register(AuthRequest request) {
-        if (userService.getUserByUsername(request.getUsername()) != null) {
+        if (userService.getUserByUsername(request.getUsername()).isPresent()) {
             throw new BadRequestException("User already exists");
         }
         User user = User.builder()

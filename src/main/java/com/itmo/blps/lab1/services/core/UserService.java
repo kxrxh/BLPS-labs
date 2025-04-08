@@ -10,6 +10,7 @@ import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.repositories.UserRepository;
 
 import io.basc.framework.lang.NotFoundException;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -20,8 +21,8 @@ public class UserService {
         return userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
     }
 
-    public User getUserByUsername(String username) {
-        return userRepository.findByUsername(username).orElseThrow(() -> new NotFoundException("User not found"));
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 
     public User getUserByUsernameAndPassword(String username, String password) {
@@ -33,7 +34,8 @@ public class UserService {
         return new UserDetailsService() {
             @Override
             public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-                return getUserByUsername(username);
+                return getUserByUsername(username)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
             }
         };
     }

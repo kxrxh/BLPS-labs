@@ -1,6 +1,7 @@
 package com.itmo.blps.lab1.config;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,19 +46,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String username = jwtService.getUsernameFromToken(jwt);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            User userDetails = userService.getUserByUsername(username);
+            Optional<User> userDetailsOptional = userService.getUserByUsername(username);
 
-            if (jwtService.isTokenValid(jwt, userDetails)) {
-                SecurityContext context = SecurityContextHolder.createEmptyContext();
+            if (userDetailsOptional.isPresent()) {
+                User userDetails = userDetailsOptional.get();
+                if (jwtService.isTokenValid(jwt, userDetails)) {
+                    SecurityContext context = SecurityContextHolder.createEmptyContext();
 
-                UserAuthentication authToken = new UserAuthentication(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
+                    UserAuthentication authToken = new UserAuthentication(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities());
 
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                context.setAuthentication(authToken);
-                SecurityContextHolder.setContext(context);
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    context.setAuthentication(authToken);
+                    SecurityContextHolder.setContext(context);
+                }
             }
         }
         filterChain.doFilter(request, response);
