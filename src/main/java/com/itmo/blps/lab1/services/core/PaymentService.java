@@ -149,6 +149,10 @@ public class PaymentService {
                 // Set success status
                 setPaymentStatus(payment, PaymentStatus.SUCCESS);
 
+                if (payment.getAmount() == 999.99) {
+                    throw new RuntimeException("Simulated error after payment success, before promotion activation.");
+                }
+
                 // Call AdvertisementService to activate the promotion
                 advertisementService.activatePromotion(payment.getAdvertisement().getId());
 
