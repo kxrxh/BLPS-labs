@@ -166,12 +166,21 @@ public class PaymentService {
         }
     }
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public void updatePaymentStatus(Long paymentId, PaymentStatus status) {
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new NotFoundException("Payment not found during status update: " + paymentId));
-        payment.setStatus(status);
-        paymentRepository.save(payment);
+        transactionTemplate.execute(transactionStatus -> {
+            try {
+                Payment payment = paymentRepository.findById(paymentId)
+                        .orElseThrow(
+                                () -> new NotFoundException("Payment not found during status update: " + paymentId));
+                payment.setStatus(status);
+                paymentRepository.save(payment);
+                return null;
+            } catch (Exception e) {
+                // Mark transaction for rollback
+                transactionStatus.setRollbackOnly();
+                throw new RuntimeException("Payment status update failed: " + e.getMessage(), e);
+            }
+        });
     }
 
     private boolean processPaymentWithProvider(Payment payment) {
