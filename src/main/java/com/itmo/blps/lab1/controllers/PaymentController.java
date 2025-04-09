@@ -44,14 +44,14 @@ public class PaymentController {
     @ApiResponse(responseCode = "200", description = "Returns the result of the payment process")
     @PreAuthorize("hasAuthority('payment:process')")
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto,
-                                                              @AuthenticationPrincipal UserDetails userDetails) {
-        Payment payment = paymentService.createPayment(paymentDto, userDetails);
-        String paymentInfo = paymentService.processPayment(payment);
-        
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        String paymentInfo = paymentService.createAndProcessPayment(paymentDto, userDetails);
+
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
         response.put("payment_info", paymentInfo);
-        
+
         return ResponseEntity.ok(response);
     }
 }
