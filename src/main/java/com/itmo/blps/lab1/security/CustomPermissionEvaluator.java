@@ -64,16 +64,8 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         UserAuthentication userAuth = (UserAuthentication) authentication;
         Long userId = userAuth.getUserId();
 
-        // Check basic authority first (if needed, though @PreAuthorize usually handles this)
-        // boolean hasBasicPermission = authentication.getAuthorities().stream()
-        //         .anyMatch(ga -> ga.getAuthority().equals("advertisement:" + permission));
-        // if (!hasBasicPermission) return false;
-
         // Ownership check for specific permissions
         if ("edit".equals(permission) || "delete".equals(permission) || "apply_promotion".equals(permission)) {
-            // Check if user owns the advertisement
-            // NOTE: This might involve a DB call if ownership isn't loaded elsewhere
-            // Optimization: Load ownership info if possible during initial load or cache it.
             return advertisementService.isOwner(userId, advertisementId);
         }
 
@@ -81,14 +73,7 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         if ("read".equals(permission)) {
            return true; // Assuming basic 'advertisement:read' authority check was sufficient
         }
-        
-        // Handle 'create' - typically doesn't involve a targetId
-        // The hasAuthority('advertisement:create') check is usually sufficient.
 
         return false; // Deny other permissions by default
     }
-
-     // Add similar check methods for Promotion, Payment, POI, etc.
-     // private boolean checkPromotionPermission(...) { ... }
-     // private boolean checkPaymentPermission(...) { ... }
 } 

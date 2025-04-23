@@ -8,7 +8,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
-import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
 import com.itmo.blps.lab1.services.core.PaymentService;
 
