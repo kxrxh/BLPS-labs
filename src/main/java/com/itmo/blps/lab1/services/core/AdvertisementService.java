@@ -171,16 +171,17 @@ public class AdvertisementService {
      * @return true if the user is the owner, false otherwise.
      */
     public boolean isOwner(Long userId, Long advertisementId) {
-        return transactionTemplate.execute(status -> {
+        Boolean result = transactionTemplate.execute(status -> {
             status.setRollbackOnly(); // Equivalent to readOnly = true
             if (userId == null || advertisementId == null) {
-                return false;
+                return Boolean.FALSE; // Return Boolean object
             }
             return advertisementRepository.findById(advertisementId)
                     .map(Advertisement::getAuthor)
                     .map(User::getId)
-                    .map(ownerId -> ownerId.equals(userId))
-                    .orElse(false);
+                    .map(ownerId -> Boolean.valueOf(ownerId.equals(userId))) // Ensure Boolean object
+                    .orElse(Boolean.FALSE); // Return Boolean object
         });
+        return result != null && result;
     }
 }
