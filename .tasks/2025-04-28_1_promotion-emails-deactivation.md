@@ -241,7 +241,7 @@ git branch -d task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
     - Implement logic to find expired promotions (check `expirationDate`, `isActive`), call `promotionService.deactivatePromotion(promotion.getId())`.
 7.  **User Management:** Update registration/user creation logic (`AuthService`/`UserService`/Controllers) to handle the new `email` field.
 
-# Current execution step: "5. Iterate on the task"
+# Current execution step: "7. Merge Task Branch"
 
 - Eg. "2. Create the task file"
 
