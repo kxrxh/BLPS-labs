@@ -34,6 +34,3 @@ build/
 
 ### Transaction Logs ###
 transaction-logs/
-
-### Tasks ###
-.tasks/
