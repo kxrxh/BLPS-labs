@@ -21,6 +21,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -53,16 +54,16 @@ public class User implements UserDetails {
     @Size(min = 8, max = 100, message = "Password must be between 8 and 100 characters")
     private String password;
 
+    @Column(unique = true)
+    @Email(message = "Please provide a valid email address")
+    private String email;
+
     @Column(nullable = false)
     @CreationTimestamp
     private LocalDateTime createdAt;
 
     @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
+    @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     @Builder.Default
     @JsonIgnore
     private Set<Role> roles = new HashSet<>();
@@ -80,7 +81,7 @@ public class User implements UserDetails {
                 .collect(Collectors.toList());
 
         return Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
-                     .collect(Collectors.toList());
+                .collect(Collectors.toList());
     }
 
     @Override

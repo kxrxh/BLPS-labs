@@ -3,6 +3,7 @@ package com.itmo.blps.lab1.dto.auth;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -21,4 +22,8 @@ public class AuthRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
+
+    @Schema(description = "Email Address (Required for registration)", example = "user@example.com")
+    @Email(message = "Please provide a valid email address")
+    private String email;
 }

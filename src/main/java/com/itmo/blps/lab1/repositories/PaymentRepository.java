@@ -10,5 +10,10 @@ import java.util.List;
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findByPromotionIdAndStatus(Long promotionId, PaymentStatus status);
+
     List<Payment> findByPromotionId(Long promotionId);
+
+    // Added for Task promotion-emails-deactivation_2025-04-28_1
+    // Find the latest successful payment for a specific promotion
+    Optional<Payment> findFirstByPromotionIdAndStatusOrderByCreatedAtDesc(Long promotionId, PaymentStatus status);
 }

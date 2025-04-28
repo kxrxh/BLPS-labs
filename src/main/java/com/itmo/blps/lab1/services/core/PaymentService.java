@@ -26,8 +26,12 @@ import com.itmo.blps.lab1.repositories.PaymentProviderRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 import org.springframework.web.client.HttpClientErrorException;
+
+import com.itmo.blps.lab1.entities.Promotion;
+import com.itmo.blps.lab1.service.EmailService;
 
 @Service
 public class PaymentService {
@@ -49,6 +53,9 @@ public class PaymentService {
 
     @Autowired
     private TransactionTemplate transactionTemplate;
+
+    @Autowired
+    private EmailService emailService;
 
     // Use @Lazy to prevent circular dependency issues on startup
     @Lazy
@@ -148,12 +155,33 @@ public class PaymentService {
                 // Set success status
                 setPaymentStatus(payment, PaymentStatus.SUCCESS);
 
+                // Preserve simulated error logic
                 if (payment.getAmount() == 999.99) {
                     throw new RuntimeException("Simulated error after payment success, before promotion activation.");
                 }
 
-                // Call AdvertisementService to activate the promotion
-                advertisementService.activatePromotion(payment.getAdvertisement().getId());
+                // Activate Promotion Dates and Send Receipt
+                Promotion promotion = payment.getPromotion();
+                if (promotion != null) {
+                    LocalDateTime now = LocalDateTime.now();
+                    promotion.setActivationDate(now);
+                    promotion.setExpirationDate(now.plusDays(promotion.getDurationInDays()));
+                    promotion.setReminderSent(false); // Reset reminder flag on new activation
+                    promotionRepository.save(promotion); // Save updated promotion dates
+
+                    // Send receipt email (requires User object associated with Payment)
+                    if (payment.getPayer() != null) {
+                        emailService.sendPaymentReceipt(payment.getPayer(), payment);
+                    } else {
+                        // Log warning if payer is somehow null
+                        System.err.println("Warning: Payer is null for successful payment ID: " + payment.getId()
+                                + ". Cannot send receipt."); // Replace with logger
+                    }
+                }
+
+                Advertisement ad = payment.getAdvertisement();
+                ad.setIsPromoted(true);
+                advertisementRepository.save(ad);
 
                 // Return success message only if everything completes
                 return "Successful payment and promotion activation.";

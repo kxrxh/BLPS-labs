@@ -142,6 +142,13 @@
 		</dependency>
 		<!-- End Task async-notifications_2025-04-28_1 -->
 
+		<!-- Added for Task promotion-emails-deactivation_2025-04-28_1 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+		<!-- End Task promotion-emails-deactivation_2025-04-28_1 -->
+
 	</dependencies>
 
 	<build>

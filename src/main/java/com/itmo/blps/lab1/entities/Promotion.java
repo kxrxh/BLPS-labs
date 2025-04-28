@@ -47,4 +47,13 @@ public class Promotion {
 
     @Column(nullable = false)
     private Integer durationInDays = 30; // Default duration of 30 days
+
+    @Column(nullable = true)
+    private LocalDateTime activationDate;
+
+    @Column(nullable = true)
+    private LocalDateTime expirationDate;
+
+    @Column(nullable = false)
+    private boolean reminderSent = false;
 }

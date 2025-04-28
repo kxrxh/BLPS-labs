@@ -11,6 +11,9 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
+import com.itmo.blps.lab1.entities.User;
+import com.itmo.blps.lab1.service.EmailService;
+import com.itmo.blps.lab1.entities.PaymentStatus;
 
 import io.basc.framework.lang.NotFoundException;
 
@@ -28,6 +31,9 @@ public class PromotionService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     @Transactional
     public Promotion createPromotion(PromotionDto promotionDto) {
@@ -103,20 +109,49 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + id));
 
-        // Find and update all advertisements with this promotion
-        List<Advertisement> advertisements = advertisementRepository.findAll().stream()
-                .filter(ad -> ad.getPromotion() != null && ad.getPromotion().getId().equals(id))
-                .toList();
+        // Find the advertisement currently using this promotion (if any)
+        Optional<Advertisement> adOpt = advertisementRepository.findByPromotionId(id);
 
-        // Remove promotion from all associated advertisements
-        for (Advertisement ad : advertisements) {
-            ad.setPromotion(null);
+        // Remove promotion from the associated advertisement
+        if (adOpt.isPresent()) {
+            Advertisement ad = adOpt.get();
+            // ad.setPromotion(null); // Consider if this is desired
             ad.setIsPromoted(false);
             advertisementRepository.save(ad);
         }
 
         // Deactivate the promotion
         promotion.setIsActive(false);
+        promotion.setActivationDate(null); // Clear activation/expiration dates on manual/scheduled deactivation
+        promotion.setExpirationDate(null);
+        promotion.setReminderSent(false); // Reset reminder flag
         promotionRepository.save(promotion);
+
+        // Send deactivation email
+        User userToNotify = findUserForPromotion(promotion);
+        if (userToNotify != null) {
+            emailService.sendPromotionDeactivationNotice(userToNotify, promotion);
+        } else {
+            System.err.println("Warning: Could not find user for promotion ID " + id + " to send deactivation notice.");
+        }
+    }
+
+    private User findUserForPromotion(Promotion promotion) {
+        // Find the latest successful payment for this specific promotion
+        Optional<Payment> paymentOpt = paymentRepository
+                .findFirstByPromotionIdAndStatusOrderByCreatedAtDesc(promotion.getId(), PaymentStatus.SUCCESS);
+
+        if (paymentOpt.isEmpty()) {
+            System.err.println("Warning: No successful payment found for promotion ID " + promotion.getId()
+                    + " to determine user.");
+            return null;
+        }
+
+        User payer = paymentOpt.get().getPayer();
+        if (payer == null) {
+            System.err.println("Warning: Successful payment ID " + paymentOpt.get().getId() + " for promotion ID "
+                    + promotion.getId() + " has no associated payer.");
+        }
+        return payer;
     }
 }
