@@ -48,8 +48,6 @@ public class PaymentService {
     @Autowired
     private PromotionRepository promotionRepository;
 
-    @Autowired
-    private AdvertisementService advertisementService;
 
     @Autowired
     private TransactionTemplate transactionTemplate;

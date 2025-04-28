@@ -54,6 +54,6 @@ public class Promotion {
     @Column(nullable = true)
     private LocalDateTime expirationDate;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean reminderSent = false;
 }

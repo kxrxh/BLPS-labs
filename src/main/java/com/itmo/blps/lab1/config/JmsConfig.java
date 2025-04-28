@@ -9,9 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
-import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
-import org.springframework.jms.support.converter.MessageConverter;
-import org.springframework.jms.support.converter.MessageType;
 
 @Configuration
 @EnableJms
@@ -33,7 +30,7 @@ public class JmsConfig {
     public ConnectionFactory rabbitJmsConnectionFactory() {
         RMQConnectionFactory connectionFactory = new RMQConnectionFactory();
         connectionFactory.setHost(rabbitHost);
-        connectionFactory.setPort(5672); // Default AMQP port for RabbitMQ JMS Client
+        connectionFactory.setPort(rabbitAmqpPort); // Use the injected port variable
         connectionFactory.setUsername(rabbitUsername);
         connectionFactory.setPassword(rabbitPassword);
         connectionFactory.setVirtualHost("/"); // Default virtual host
