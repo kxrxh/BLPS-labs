@@ -274,7 +274,7 @@ git branch -d task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
 - Changes: Implemented EmailService logic. Added email field to AuthRequest. Updated AuthService and AuthController to use modified AuthRequest for registration. Updated PaymentService to set promotion activation/expiration dates and trigger receipt email sending.
 - Reason: Implement email sending and integrate it with user registration and payment confirmation.
 - Blockers: Need to update DTOs other than AuthRequest (e.g., UserDto) if they exist and are used elsewhere; Need confirmation/adjustment of the original `advertisementService.activatePromotion` logic in PaymentService.
-- Status: UNCONFIRMED
+- Status: SUCCESSFUL
 
 `2025-04-28_14:49:55`
 
@@ -287,7 +287,7 @@ git branch -d task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
 - Changes: Implemented PromotionExpirationScheduler (with placeholder user lookup). Added required query methods to PromotionRepository. Modified PromotionService.deactivatePromotion to clear dates, reset flags, and trigger deactivation email (placeholder user lookup). Added email to UserDto. Re-added simulated error in PaymentService.
 - Reason: Implement scheduled promotion reminder/deactivation logic and update associated services/DTOs.
 - Blockers: User lookup logic in scheduler and deactivation service needs proper implementation (likely requires finding the associated Payment).
-- Status: UNCONFIRMED
+- Status: SUCCESSFUL
 
 `2025-04-28_14:51:34`
 
@@ -298,7 +298,7 @@ git branch -d task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
 - Changes: Implemented user lookup logic in PromotionExpirationScheduler and PromotionService using PaymentRepository. Added necessary query method to PaymentRepository. Corrected repository method calls in scheduler. Fixed missing import in PromotionService.
 - Reason: Implement final core logic for scheduled tasks and deactivation email triggering.
 - Blockers: None identified (user lookup logic implemented).
-- Status: UNCONFIRMED
+- Status: SUCCESSFUL
 
 # Final Review:
 
