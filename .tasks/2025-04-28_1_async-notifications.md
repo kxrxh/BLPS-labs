@@ -233,7 +233,7 @@ git branch -d task/[TASK_IDENTIFIER]_[TASK_DATE_AND_NUMBER]
 5.  **Task Logic:** Implement receipt/reminder generation in `NotificationService` triggered by `NotificationScheduler`, sent via `StompNotificationProducer`, and processed by `JmsNotificationConsumer`.
 6.  **Note on JMS/RabbitMQ:** Will attempt implementation using `rabbitmq-jms`. If issues arise, propose switching listener to `@RabbitListener` (Spring AMQP).
 
-# Current execution step: "5. Iterate on the task"
+# Current execution step: "7. Merge Task Branch"
 
 - Eg. "2. Create the task file"
 
