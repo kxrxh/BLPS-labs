@@ -1,6 +1,8 @@
 package com.itmo.blps.lab1.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentStatus;
@@ -19,4 +21,15 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Optional<Payment> findFirstByPromotionIdAndStatusOrderByCreatedAtDesc(Long promotionId, PaymentStatus status);
 
     List<Payment> findByStatusAndReminderSentFalseAndCreatedAtBefore(PaymentStatus status, LocalDateTime threshold);
+
+    List<Payment> findByPayer_Id(Long payerId);
+
+    List<Payment> findByStatusAndPayer_Id(PaymentStatus status, Long payerId);
+
+    /**
+     * Find the latest successful payment for a specific promotion
+     */
+    @Query("SELECT p FROM Payment p WHERE p.promotion.id = :promotionId AND p.status = 'SUCCESS' " +
+            "ORDER BY p.createdAt DESC")
+    Optional<Payment> findLatestSuccessfulPaymentByPromotionId(@Param("promotionId") Long promotionId);
 }

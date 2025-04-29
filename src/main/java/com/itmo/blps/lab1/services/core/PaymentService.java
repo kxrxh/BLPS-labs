@@ -32,6 +32,10 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.service.EmailService;
+import com.itmo.blps.lab1.service.NotificationService;
+import com.itmo.blps.lab1.messaging.StompNotificationProducer;
+
+import java.util.Random;
 
 @Service
 public class PaymentService {
@@ -48,12 +52,17 @@ public class PaymentService {
     @Autowired
     private PromotionRepository promotionRepository;
 
-
     @Autowired
     private TransactionTemplate transactionTemplate;
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private StompNotificationProducer stompProducer;
 
     // Use @Lazy to prevent circular dependency issues on startup
     @Lazy
@@ -140,58 +149,89 @@ public class PaymentService {
         return paymentRepository.save(payment);
     }
 
-    // Step 2 & 3. Process payment and apply promotion if payment succeeds.
-    public String processPayment(Payment payment) {
-        try {
-            // Mark as pending
-            setPaymentStatus(payment, PaymentStatus.PENDING);
+    /**
+     * Process a payment and handle activation of promotions
+     *
+     * @param payment The payment to process
+     * @return Status message
+     */
+    private String processPayment(Payment payment) {
+        // 1. Log the payment processing start
+        Long paymentId = payment.getId();
+        Long advertisementId = payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : null;
+        Long promotionId = payment.getPromotion() != null ? payment.getPromotion().getId() : null;
 
-            // Simulate payment provider interaction
-            boolean paymentSuccessful = processPaymentWithProvider(payment);
+        // 2. Simulate payment processing with the selected provider
+        PaymentProvider provider = payment.getProvider();
+        boolean isSuccessful = simulatePaymentProviderProcessing(provider);
 
-            if (paymentSuccessful) {
-                // Set success status
-                setPaymentStatus(payment, PaymentStatus.SUCCESS);
+        if (isSuccessful) {
+            // 3a. If successful, activate the promotion for the advertisement
+            PaymentStatus status = PaymentStatus.SUCCESS;
+            setPaymentStatus(payment, status);
 
-                // Preserve simulated error logic
-                if (payment.getAmount() == 999.99) {
-                    throw new RuntimeException("Simulated error after payment success, before promotion activation.");
-                }
-
-                // Activate Promotion Dates and Send Receipt
-                Promotion promotion = payment.getPromotion();
-                if (promotion != null) {
-                    LocalDateTime now = LocalDateTime.now();
-                    promotion.setActivationDate(now);
-                    promotion.setExpirationDate(now.plusDays(promotion.getDurationInDays()));
-                    promotion.setReminderSent(false); // Reset reminder flag on new activation
-                    promotionRepository.save(promotion); // Save updated promotion dates
-
-                    // Send receipt email (requires User object associated with Payment)
-                    if (payment.getPayer() != null) {
-                        emailService.sendPaymentReceipt(payment.getPayer(), payment);
-                    } else {
-                        // Log warning if payer is somehow null
-                        System.err.println("Warning: Payer is null for successful payment ID: " + payment.getId()
-                                + ". Cannot send receipt."); // Replace with logger
-                    }
-                }
-
+            if (advertisementId != null && promotionId != null) {
+                // Activate the promotion
                 Advertisement ad = payment.getAdvertisement();
+                if (ad == null) {
+                    throw new NotFoundException("Advertisement not found with id: " + advertisementId);
+                }
+                Promotion promotion = payment.getPromotion();
+                if (promotion == null) {
+                    throw new NotFoundException("Promotion not found with id: " + promotionId);
+                }
+
+                // Set the activation and expiration dates
+                LocalDateTime now = LocalDateTime.now();
+                promotion.setActivationDate(now);
+                promotion.setExpirationDate(now.plusDays(promotion.getDurationInDays()));
+                promotion.setReminderSent(false);
+                promotionRepository.save(promotion);
+
+                // Set the ad as promoted and activate the promotion
                 ad.setIsPromoted(true);
+                // TODO: Set ad.setPromotion(promotion) if needed
                 advertisementRepository.save(ad);
 
-                // Return success message only if everything completes
-                return "Successful payment and promotion activation.";
+                // Send a receipt notification via STOMP
+                User user = payment.getPayer();
+                if (user != null) {
+                    String notificationPayload = notificationService.createPaymentReceiptNotification(user, payment);
+                    stompProducer.sendNotification(notificationPayload);
+                }
+
+                return "Payment successfully processed. Promotion activated for advertisement.";
             } else {
-                // Set FAILED status
-                setPaymentStatus(payment, PaymentStatus.FAILED);
-                throw new RuntimeException("Payment provider declined the transaction.");
+                return "Payment successfully processed. But could not activate promotion due to missing ad or promotion info.";
             }
-        } catch (Exception e) {
-            // Set FAILED status
+        } else {
+            // 3b. If failed, set payment status to failed
             setPaymentStatus(payment, PaymentStatus.FAILED);
-            throw new RuntimeException("Payment processing failed: " + e.getMessage(), e);
+            return "Payment processing failed. Please try again or contact support.";
+        }
+    }
+
+    /**
+     * Simple simulation of payment provider processing
+     *
+     * @param provider The payment provider to use
+     * @return Whether the payment was successful
+     */
+    private boolean simulatePaymentProviderProcessing(PaymentProvider provider) {
+        try {
+            // Simulate processing time
+            Thread.sleep(1000);
+
+            // Simulate a success rate (e.g., 80% success rate)
+            Random random = new Random();
+            double randomValue = random.nextDouble();
+            double successRate = 0.8; // 80% success rate
+
+            // In real implementation, this would call the actual payment provider API
+            return randomValue <= successRate;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Payment processing was interrupted");
         }
     }
 
@@ -210,17 +250,5 @@ public class PaymentService {
                 throw new RuntimeException("Payment status update failed: " + e.getMessage(), e);
             }
         });
-    }
-
-    private boolean processPaymentWithProvider(Payment payment) {
-        System.out.println("Simulating payment processing for amount: " + payment.getAmount() + " via provider: "
-                + payment.getProvider().getName());
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            return false;
-        }
-        return Math.random() > 0.2;
     }
 }
