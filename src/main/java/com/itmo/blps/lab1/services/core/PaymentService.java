@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionSynchronization;
 
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
@@ -27,6 +29,7 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 
 import java.util.List;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -83,16 +86,36 @@ public class PaymentService {
         def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
         def.setTimeout(30); // 30 seconds timeout
 
-        return transactionTemplate.execute(status -> {
+        // Process payment and get potential notification payload within transaction
+        String notificationPayload = transactionTemplate.execute(status -> {
             try {
                 Payment payment = createPayment(paymentDto, userDetails);
+                // processPayment now returns the payload or null
                 return processPayment(payment);
             } catch (Exception e) {
                 // Mark transaction for rollback
                 status.setRollbackOnly();
+                // Re-throw as a runtime exception to propagate
                 throw new RuntimeException("Payment creation and processing failed: " + e.getMessage(), e);
             }
         });
+
+        // If a notification payload was generated, send it after commit
+        if (notificationPayload != null) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    stompProducer.sendNotification(notificationPayload);
+                }
+            });
+            return "Payment successfully processed. Promotion activated. Receipt notification queued.";
+        } else {
+            // Determine if failure occurred or just no notification needed
+            // We might need a more sophisticated way to return status if the transaction
+            // rolled back vs. payment failed simulation
+            // For now, assume null payload means simulated failure or incomplete data
+            return "Payment processing finished (potentially failed or missing data for notification).";
+        }
     }
 
     public Payment createPayment(PaymentDto paymentDto, UserDetails userDetails) {
@@ -149,7 +172,7 @@ public class PaymentService {
      * Process a payment and handle activation of promotions
      *
      * @param payment The payment to process
-     * @return Status message
+     * @return Notification payload if successful, otherwise null
      */
     private String processPayment(Payment payment) {
         // 1. Log the payment processing start
@@ -182,21 +205,26 @@ public class PaymentService {
                 ad.setDurationInMinutes(promotion.getDurationInMinutes());
                 advertisementRepository.save(ad);
 
-                // Send a receipt notification via STOMP
-                User user = payment.getPayer();
-                if (user != null) {
-                    String notificationPayload = notificationService.createPaymentReceiptNotification(user, payment);
-                    stompProducer.sendNotification(notificationPayload);
+                // Prepare notification payload but DON'T send yet
+                User user = payment.getAdvertisement().getAuthor();
+                if (user == null) {
+                    // Log or handle case where author might be missing unexpectedly after creation
+                    // checks
+                    // This case should ideally be prevented by checks in createPayment
+                    return null; // Cannot create notification without user
                 }
+                String notificationPayload = notificationService.createPaymentReceiptNotification(user, payment);
+                // stompProducer.sendNotification(notificationPayload); // Removed from here
 
-                return "Payment successfully processed. Promotion activated for advertisement.";
+                return notificationPayload; // Return payload for sending after commit
             } else {
-                return "Payment successfully processed. But could not activate promotion due to missing ad or promotion info.";
+                // Log maybe? Payment succeeded but info missing for activation/notification
+                return null; // No notification to send
             }
         } else {
             // 3b. If failed, set payment status to failed
             setPaymentStatus(payment, PaymentStatus.FAILED);
-            return "Payment processing failed. Please try again or contact support.";
+            return null; // No notification to send on failure
         }
     }
 
