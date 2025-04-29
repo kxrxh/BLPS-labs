@@ -76,12 +76,16 @@ public class Advertisement {
     private LocalDateTime startDate;
 
     @Nullable
-    @Min(value = 1, message = "Duration must be at least 1 day")
-    private Integer durationInDays;
+    @Min(value = 1, message = "Duration must be at least 1 minute")
+    private Integer durationInMinutes;
 
     public boolean isExpired() {
-        if (startDate == null)
+        if (startDate == null || durationInMinutes == null)
             return false;
-        return LocalDateTime.now().isAfter(startDate.plusDays(durationInDays));
+        return LocalDateTime.now().isAfter(startDate.plusMinutes(durationInMinutes));
     }
+
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    @Builder.Default
+    private boolean reminderSent = false;
 }

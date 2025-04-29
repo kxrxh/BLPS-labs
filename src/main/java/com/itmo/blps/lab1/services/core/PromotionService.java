@@ -122,15 +122,12 @@ public class PromotionService {
 
         // Deactivate the promotion
         promotion.setIsActive(false);
-        promotion.setActivationDate(null); // Clear activation/expiration dates on manual/scheduled deactivation
-        promotion.setExpirationDate(null);
-        promotion.setReminderSent(false); // Reset reminder flag
         promotionRepository.save(promotion);
 
         // Send deactivation email
         User userToNotify = findUserForPromotion(promotion);
         if (userToNotify != null) {
-            emailService.sendPromotionDeactivationNotice(userToNotify, promotion);
+            emailService.sendPromotionDeactivationNotice(userToNotify, ad);
         } else {
             System.err.println("Warning: Could not find user for promotion ID " + id + " to send deactivation notice.");
         }

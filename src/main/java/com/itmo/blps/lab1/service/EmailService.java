@@ -1,5 +1,6 @@
 package com.itmo.blps.lab1.service;
 
+import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.entities.User;
@@ -17,6 +18,7 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.Locale;
 
 @Service
@@ -31,7 +33,8 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String mailFrom;
 
-    public EmailService() {}
+    public EmailService() {
+    }
 
     public void sendPaymentReceipt(User user, Payment payment) {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
@@ -44,7 +47,8 @@ public class EmailService {
         context.setVariable("username", user.getUsername());
         context.setVariable("paymentAmount", String.format("%.2f", payment.getAmount())); // Format amount
         context.setVariable("promotionName", payment.getPromotion() != null ? payment.getPromotion().getName() : "N/A");
-        context.setVariable("advertisementId", payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : "N/A");
+        context.setVariable("advertisementId",
+                payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : "N/A");
         context.setVariable("paymentId", payment.getId());
         // Add any other variables needed for the template
 
@@ -58,32 +62,48 @@ public class EmailService {
         sendHtmlMessage(user.getEmail(), subject, htmlContent);
     }
 
-    public void sendPromotionReminder(User user, Promotion promotion) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Cannot send promotion reminder: User {} has no email address.", user.getUsername());
-            return;
-        }
-        String subject = "Promotion Reminder - Nearing Expiration";
-        String text = String.format(
-                "Dear %s,\n\nThis is a reminder that your promotion '%s' is set to expire soon (on %s).\n\nRegards,\nThe Team",
-                user.getUsername(),
-                promotion.getName(),
-                promotion.getExpirationDate() != null ? promotion.getExpirationDate().toLocalDate().toString() : "N/A");
-        sendSimpleMessage(user.getEmail(), subject, text);
-    }
+    // Promotion expiration is tied to Advertisement, not Promotion itself.
+    // This method's logic is likely flawed based on the Advertisement entity
+    // design.
+    /*
+     * public void sendPromotionReminder(User user, Promotion promotion) {
+     * if (user.getEmail() == null || user.getEmail().isBlank()) {
+     * log.warn("Cannot send promotion reminder: User {} has no email address.",
+     * user.getUsername());
+     * return;
+     * }
+     * String subject = "Promotion Reminder - Nearing Expiration";
+     * String text = String.format(
+     * "Dear %s,\n\nThis is a reminder that your promotion '%s' is set to expire soon (on %s).\n\nRegards,\nThe Team"
+     * ,
+     * user.getUsername(),
+     * promotion.getName(),
+     * promotion.getExpirationDate() != null ?
+     * promotion.getExpirationDate().toLocalDate().toString() : "N/A"); // Error:
+     * getExpirationDate() undefined
+     * sendSimpleMessage(user.getEmail(), subject, text);
+     * }
+     */
 
-    public void sendPromotionDeactivationNotice(User user, Promotion promotion) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Cannot send promotion deactivation notice: User {} has no email address.", user.getUsername());
-            return;
-        }
-        String subject = "Promotion Deactivated";
-        String text = String.format(
-                "Dear %s,\n\nYour promotion '%s' has now expired and has been deactivated.\n\nRegards,\nThe Team",
-                user.getUsername(),
-                promotion.getName());
-        sendSimpleMessage(user.getEmail(), subject, text);
-    }
+    // This method seems redundant or potentially misleading as Promotions don't
+    // deactivate independently.
+    /*
+     * public void sendPromotionDeactivationNotice(User user, Promotion promotion) {
+     * if (user.getEmail() == null || user.getEmail().isBlank()) {
+     * log.
+     * warn("Cannot send promotion deactivation notice: User {} has no email address."
+     * , user.getUsername());
+     * return;
+     * }
+     * String subject = "Promotion Deactivated";
+     * String text = String.format(
+     * "Dear %s,\n\nYour promotion '%s' has now expired and has been deactivated.\n\nRegards,\nThe Team"
+     * ,
+     * user.getUsername(),
+     * promotion.getName());
+     * sendSimpleMessage(user.getEmail(), subject, text);
+     * }
+     */
 
     public void sendPaymentReminder(User user, Payment payment) {
         if (user.getEmail() == null || user.getEmail().isBlank()) {
@@ -97,6 +117,29 @@ public class EmailService {
                 payment.getAmount(),
                 payment.getPromotion() != null ? payment.getPromotion().getName() : "N/A", // Handle null promotion
                 payment.getId());
+        sendSimpleMessage(user.getEmail(), subject, text);
+    }
+
+    /**
+     * Sends a notification to the user that their advertisement promotion is about
+     * to expire
+     */
+    public void sendPromotionExpirationNotice(User user, Advertisement advertisement, LocalDateTime expirationDate) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("Cannot send promotion expiration notice: User {} has no email address.", user.getUsername());
+            return;
+        }
+
+        String subject = "Promotion Expiring Soon - " + advertisement.getName();
+        String text = String.format(
+                "Dear %s,\n\nYour promoted advertisement '%s' will expire on %s.\n\n" +
+                        "If you wish to continue promoting this advertisement, please visit your dashboard to renew the promotion.\n\n"
+                        +
+                        "Regards,\nThe Team",
+                user.getUsername(),
+                advertisement.getName(),
+                expirationDate.toLocalDate().toString());
+
         sendSimpleMessage(user.getEmail(), subject, text);
     }
 
@@ -119,7 +162,9 @@ public class EmailService {
     private void sendHtmlMessage(String to, String subject, String htmlBody) {
         try {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name()); // true = multipart
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name()); // true
+                                                                                                                // =
+                                                                                                                // multipart
 
             helper.setFrom(mailFrom);
             helper.setTo(to);
