@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connector xmlns="https://jakarta.ee/xml/ns/jakartaee"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                               https://jakarta.ee/xml/ns/jakartaee/connector_2_1.xsd"
+           version="2.1">
+    <display-name>SMTP Resource Adapter</display-name>
+    <vendor-name>ITMO</vendor-name>
+    <eis-type>SMTP Server</eis-type>
+    <resourceadapter-version>1.0</resourceadapter-version>
+
+    <license>
+        <description>ITMO License</description>
+        <license-required>false</license-required>
+    </license>
+
+    <resourceadapter>
+        <resourceadapter-class>com.itmo.blps.lab1.jca.SmtpResourceAdapter</resourceadapter-class>
+
+        <outbound-resourceadapter>
+            <connection-definition>
+                <managedconnectionfactory-class>com.itmo.blps.lab1.jca.SmtpManagedConnectionFactory</managedconnectionfactory-class>
+                <connectionfactory-interface>com.itmo.blps.lab1.jca.SmtpConnectionFactory</connectionfactory-interface>
+                <connectionfactory-impl-class>com.itmo.blps.lab1.jca.SmtpConnectionFactoryImpl</connectionfactory-impl-class>
+                <connection-interface>com.itmo.blps.lab1.jca.SmtpConnection</connection-interface>
+                <connection-impl-class>com.itmo.blps.lab1.jca.SmtpConnectionImpl</connection-impl-class>
+            </connection-definition>
+            <transaction-support>NoTransaction</transaction-support>
+            <authentication-mechanism>
+                <authentication-mechanism-type>BasicPassword</authentication-mechanism-type>
+                <credential-interface>jakarta.resource.spi.security.PasswordCredential</credential-interface>
+            </authentication-mechanism>
+            <reauthentication-support>false</reauthentication-support>
+        </outbound-resourceadapter>
+    </resourceadapter>
+</connector>
