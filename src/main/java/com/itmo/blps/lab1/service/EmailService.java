@@ -3,36 +3,33 @@ package com.itmo.blps.lab1.service;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.User;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.itmo.blps.lab1.jca.SmtpConnection;
+import com.itmo.blps.lab1.jca.SmtpConnectionFactory;
+import jakarta.resource.ResourceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.util.Locale;
 
 @Service
 @Slf4j
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender mailSender;
-    @Autowired
-    private TemplateEngine templateEngine;
+    private final SmtpConnectionFactory smtpConnectionFactory;
+    private final TemplateEngine templateEngine;
 
-    @Value("${spring.mail.username}")
+    // Inject the sender email configured for the JCA adapter
+    @Value("${jca.mail.sender-email}")
     private String mailFrom;
 
-    public EmailService() {
+    @Autowired
+    public EmailService(SmtpConnectionFactory smtpConnectionFactory, TemplateEngine templateEngine) {
+        this.smtpConnectionFactory = smtpConnectionFactory;
+        this.templateEngine = templateEngine;
     }
 
     public void sendPaymentReceipt(User user, Payment payment) {
@@ -42,20 +39,19 @@ public class EmailService {
         }
 
         // Prepare Thymeleaf context
-        Context context = new Context(Locale.getDefault()); // Or specific locale if needed
+        Context context = new Context(Locale.getDefault());
         context.setVariable("username", user.getUsername());
-        context.setVariable("paymentAmount", String.format("%.2f", payment.getAmount())); // Format amount
+        context.setVariable("paymentAmount", String.format("%.2f", payment.getAmount()));
         context.setVariable("promotionName", payment.getPromotion() != null ? payment.getPromotion().getName() : "N/A");
         context.setVariable("advertisementId",
                 payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : "N/A");
         context.setVariable("paymentId", payment.getId());
 
         String htmlContent = templateEngine.process("email/payment-receipt", context);
-
         String subject = "Payment Receipt - Promotion Activated";
 
-        // Send HTML email
-        sendHtmlMessage(user.getEmail(), subject, htmlContent);
+        // Send HTML email using the JCA connection
+        sendMessage(user.getEmail(), subject, htmlContent, true);
     }
 
     public void sendPromotionEndingNotice(Advertisement advertisement) {
@@ -66,14 +62,11 @@ public class EmailService {
         }
         String subject = "Promotion Ending Soon - " + advertisement.getName();
         String text = String.format(
-                "Dear %s,\n\nYour promoted advertisement '%s' will expire on %s.\n\n" +
-                        "If you wish to continue promoting this advertisement, please visit your dashboard to renew the promotion.\n\n"
-                        +
-                        "Regards,\nThe Team",
-                advertisement.getAuthor().getUsername(), advertisement.getName(), advertisement.getEndDate());
-        sendSimpleMessage(advertisement.getAuthor().getEmail(), subject, text);
-        log.info("Promotion ending notice sent to {} for advertisement '{}'", advertisement.getAuthor().getEmail(),
-                advertisement.getName());
+                "Dear %s,\n\nThis is a reminder that your promotion '%s' is set to expire soon (on %s).\n\nRegards,\nThe Team",
+                advertisement.getAuthor().getUsername(),
+                advertisement.getName(),
+                advertisement.getEndDate());
+        sendMessage(advertisement.getAuthor().getEmail(), subject, text, false); // Send as plain text
     }
 
     /**
@@ -88,48 +81,53 @@ public class EmailService {
         }
         String subject = "Promotion Expired - " + advertisement.getName();
         String text = String.format(
-                "Dear %s,\n\nYour promoted advertisement '%s' has expired.\n\n" +
-                        "If you wish to continue promoting this advertisement, please visit your dashboard to renew the promotion.\n\n"
-                        +
-                        "Regards,\nThe Team",
-                advertisement.getAuthor().getUsername(), advertisement.getName());
-        sendSimpleMessage(advertisement.getAuthor().getEmail(), subject, text);
-        log.info("Promotion expired notice sent to {} for advertisement '{}'", advertisement.getAuthor().getEmail(),
+                "Dear %s,\n\nYour promotion '%s' has now expired and has been deactivated.\n\nRegards,\nThe Team",
+                advertisement.getAuthor().getUsername(),
                 advertisement.getName());
+        sendMessage(advertisement.getAuthor().getEmail(), subject, text, false); // Send as plain text
     }
 
-    private void sendSimpleMessage(String to, String subject, String text) {
+    public void sendPaymentReminder(User user, Payment payment) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            log.warn("Cannot send payment reminder: User {} has no email address.", user.getUsername());
+            return;
+        }
+        String subject = "Payment Reminder - Action Required";
+        String text = String.format(
+                "Dear %s,\n\nThis is a reminder that your payment of %.2f for the promotion '%s' (Payment ID: %d) is still pending.\n\nPlease complete your payment soon.\n\nRegards,\nThe Team",
+                user.getUsername(),
+                payment.getAmount(),
+                payment.getPromotion() != null ? payment.getPromotion().getName() : "N/A",
+                payment.getId());
+        sendMessage(user.getEmail(), subject, text, false); // Send as plain text
+    }
+
+    // Consolidated sending method using JCA connection
+    private void sendMessage(String to, String subject, String body, boolean isHtml) {
+        SmtpConnection connection = null;
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailFrom);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(text);
-            mailSender.send(message);
-            log.info("Email sent successfully to {} with subject: {}", to, subject);
-        } catch (MailException e) {
-            log.error("Failed to send email to {} with subject: {}", to, subject, e);
+            log.debug("Attempting to get JCA SMTP connection to send email to {}", to);
+            connection = smtpConnectionFactory.getConnection(); // Gets a connection using configured credentials
+            log.debug("Got JCA SMTP connection: {}", connection);
+
+            // The SmtpConnection determines if content is HTML or plain text
+            connection.sendEmail(to, subject, body);
+
+            log.info("{} Email sent successfully via JCA to {} with subject: {}", isHtml ? "HTML" : "Plain Text", to,
+                    subject);
+        } catch (ResourceException e) {
+            log.error("Failed to send {} email via JCA to {} with subject: {}", isHtml ? "HTML" : "Plain Text", to,
+                    subject, e);
+            // Handle exception appropriately - maybe rethrow a service exception
+        } finally {
+            if (connection != null) {
+                try {
+                    log.debug("Closing JCA SMTP connection: {}", connection);
+                    connection.close(); // Essential: Release the connection
+                } catch (ResourceException e) {
+                    log.error("Error closing JCA SMTP connection", e);
+                }
+            }
         }
     }
-
-    // New method for sending HTML emails
-    private void sendHtmlMessage(String to, String subject, String htmlBody) {
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, StandardCharsets.UTF_8.name()); // true
-                                                                                                                // =
-                                                                                                                // multipart
-
-            helper.setFrom(mailFrom);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
-
-            mailSender.send(mimeMessage);
-            log.info("HTML Email sent successfully to {} with subject: {}", to, subject);
-        } catch (MessagingException | MailException e) {
-            log.error("Failed to send HTML email to {} with subject: {}", to, subject, e);
-        }
-    }
-
 }
