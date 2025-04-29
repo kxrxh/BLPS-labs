@@ -1,24 +1,29 @@
 package com.itmo.blps.lab1.config;
 
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
+import com.rabbitmq.jms.admin.RMQDestination;
 import jakarta.jms.ConnectionFactory;
+import jakarta.jms.Destination;
+import jakarta.jms.JMSException;
+import jakarta.jms.Session;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.jms.DefaultJmsListenerContainerFactoryConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.config.JmsListenerContainerFactory;
+import org.springframework.jms.support.converter.SimpleMessageConverter;
+import org.springframework.jms.support.destination.DestinationResolver;
+
 
 @Configuration
-@EnableJms
+@EnableJms // It's good practice to have it here too, although the one in main app should suffice
 public class JmsConfig {
 
     @Value("${spring.rabbitmq.host}")
     private String rabbitHost;
 
     @Value("${spring.rabbitmq.port}")
-    private int rabbitAmqpPort; // Use AMQP port (default 5672)
+    private int rabbitPort; // Use the AMQP port (e.g., 5672), not STOMP port
 
     @Value("${spring.rabbitmq.username}")
     private String rabbitUsername;
@@ -27,41 +32,47 @@ public class JmsConfig {
     private String rabbitPassword;
 
     @Bean
-    public ConnectionFactory rabbitJmsConnectionFactory() {
+    public ConnectionFactory connectionFactory() {
         RMQConnectionFactory connectionFactory = new RMQConnectionFactory();
         connectionFactory.setHost(rabbitHost);
-        connectionFactory.setPort(rabbitAmqpPort); // Use the injected port variable
+        // IMPORTANT: RMQConnectionFactory uses the standard AMQP port (default 5672)
+        // Make sure your application.properties reflects this or set it explicitly.
+        // If spring.rabbitmq.port in your properties is the STOMP port (e.g., 61613 or 15674),
+        // you need to use the correct AMQP port here. Assuming default 5672 if not overridden specifically for AMQP.
+        // Let's check application.properties value first.
+         connectionFactory.setPort(rabbitPort); // Ensure this is the AMQP port (e.g., 5672)
         connectionFactory.setUsername(rabbitUsername);
         connectionFactory.setPassword(rabbitPassword);
-        connectionFactory.setVirtualHost("/"); // Default virtual host
-        // connectionFactory.setUseSSL(false); // Configure SSL if needed
+        // connectionFactory.setVirtualHost("/"); // Optional: set if using a specific vhost
         return connectionFactory;
     }
 
     @Bean
-    public JmsListenerContainerFactory<?> jmsListenerContainerFactory(
-            ConnectionFactory connectionFactory,
-            DefaultJmsListenerContainerFactoryConfigurer configurer) {
+    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
         DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        // This provides all boot's default to this factory, including the message
-        // converter
-        configurer.configure(factory, connectionFactory);
-        // You could still override some of Boot's default if necessary.
-        // factory.setMessageConverter(jacksonJmsMessageConverter()); // Example
-        // override
+        factory.setConnectionFactory(connectionFactory);
+        // Configure the message converter to handle simple String/text messages
+        factory.setMessageConverter(new SimpleMessageConverter());
+
+        // Add custom DestinationResolver based on Stack Overflow solution
+        factory.setDestinationResolver(new DestinationResolver() {
+            @Override
+            public Destination resolveDestinationName(Session session, String destinationName, boolean pubSubDomain) throws JMSException {
+                RMQDestination jmsDestination = new RMQDestination();
+                // Set the name JMS uses
+                jmsDestination.setDestinationName(destinationName);
+                // Set the actual RabbitMQ queue name
+                jmsDestination.setAmqpQueueName(destinationName);
+                // Crucially, tell it to use AMQP interpretation
+                jmsDestination.setAmqp(true);
+                // pubSubDomain is not needed/available when amqp=true
+                // jmsDestination.setPubSubDomain(pubSubDomain);
+                return jmsDestination;
+            }
+        });
+
+        // factory.setConcurrency("1-1"); // Optional: configure concurrency
+        // factory.setErrorHandler(t -> log.error("Error in JMS listener", t)); // Optional: Custom error handler
         return factory;
     }
-
-    // Optional: Define a Jackson MessageConverter if needed for automatic JSON
-    // conversion
-    /*
-     * @Bean
-     * public MessageConverter jacksonJmsMessageConverter() {
-     * MappingJackson2MessageConverter converter = new
-     * MappingJackson2MessageConverter();
-     * converter.setTargetType(MessageType.TEXT);
-     * converter.setTypeIdPropertyName("_type");
-     * return converter;
-     * }
-     */
-}
+} 

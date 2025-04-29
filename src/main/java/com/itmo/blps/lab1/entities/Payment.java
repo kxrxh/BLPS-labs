@@ -52,4 +52,7 @@ public class Payment {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column
+    private Boolean reminderSent = false;
 }

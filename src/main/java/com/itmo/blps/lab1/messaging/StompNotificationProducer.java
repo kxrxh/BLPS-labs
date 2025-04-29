@@ -9,6 +9,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.broker.BrokerAvailabilityEvent;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -24,18 +25,22 @@ public class StompNotificationProducer implements ApplicationListener<BrokerAvai
     public void sendNotification(String notificationPayload) {
         if (!isBrokerAvailable.get()) {
             log.warn("Broker not available yet. Skipping STOMP notification: {}", notificationPayload);
-            return; // Skip sending if the broker is not ready
+            return;
         }
 
-        // Target the queue directly via the STOMP relay prefix
         String destination = "/queue/" + RabbitMQConfig.QUEUE_NAME;
         try {
             log.info("Sending notification via STOMP to destination '{}': {}", destination, notificationPayload);
-            messagingTemplate.convertAndSend(destination, notificationPayload);
-            log.info("Successfully sent notification to STOMP destination: {}", destination);
+
+            // Convert payload to byte[] explicitly
+            byte[] payloadBytes = notificationPayload.getBytes(StandardCharsets.UTF_8);
+
+            // Send byte[]
+            messagingTemplate.convertAndSend(destination, payloadBytes);
+
+            log.info("Successfully sent notification (as bytes) to STOMP destination: {}", destination);
         } catch (Exception e) {
             log.error("Failed to send notification via STOMP to destination '{}'", destination, e);
-            // Optional: Add error handling/retry logic here
         }
     }
 

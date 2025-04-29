@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Receipt</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+        }
+        .content p {
+            margin-bottom: 10px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+            text-align: center;
+        }
+        strong {
+             font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Payment Receipt</h2>
+        </div>
+        <div class="content">
+            <p>Dear <strong th:text="${username}">Customer</strong>,</p>
+
+            <p>Thank you for your payment. Here are the details:</p>
+            <ul>
+                <li><strong>Payment ID:</strong> <span th:text="${paymentId}">N/A</span></li>
+                <li><strong>Amount Paid:</strong> $<span th:text="${paymentAmount}">0.00</span></li>
+                <li><strong>Promotion Activated:</strong> <span th:text="${promotionName}">N/A</span></li>
+                <li><strong>For Advertisement ID:</strong> <span th:text="${advertisementId}">N/A</span></li>
+            </ul>
+
+            <p>Your promotion is now active!</p>
+
+            <p>Regards,<br/>The Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message. Please do not reply.</p>
+        </div>
+    </div>
+</body>
+</html> 

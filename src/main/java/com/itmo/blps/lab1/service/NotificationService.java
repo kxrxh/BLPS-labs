@@ -10,7 +10,7 @@ public class NotificationService {
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
-    // TODO: Replace with actual logic to fetch pending notifications/receipts
+    // TODO: Implement logic to generate meaningful scheduled status updates/notifications for STOMP clients.
     public String generateScheduledNotification() {
         return "Payment Reminder triggered at: " + LocalDateTime.now().format(formatter);
     }

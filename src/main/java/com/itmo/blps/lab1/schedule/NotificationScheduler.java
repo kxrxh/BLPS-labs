@@ -15,10 +15,7 @@ public class NotificationScheduler {
     private final NotificationService notificationService;
     private final StompNotificationProducer stompProducer;
 
-    // Run every minute for testing (fixedRate = 60000 ms)
-    // TODO: Adjust schedule as needed (e.g., use cron expression for specific
-    // times)
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(initialDelay = 30000, fixedRate = 60000)
     public void scheduleNotificationSending() {
         log.info("Running scheduled notification task...");
         try {
