@@ -106,8 +106,7 @@ public class PaymentService {
                     log.info("Payment successfully processed. Promotion activated. Receipt notification queued.");
                     return "Payment successfully processed. Promotion activated. Receipt notification queued.";
                 } else {
-                    log.info("Payment processing finished (potentially failed or missing data for notification).");
-                    return "Payment processing finished (potentially failed or missing data for notification).";
+                    throw new RuntimeException("Something went wrong during payment processing.");
                 }
 
             } catch (Exception e) {
@@ -222,6 +221,7 @@ public class PaymentService {
             }
         } else {
             // 3b. If failed, set payment status to failed
+            log.warn("Payment failed: {}", payment);
             setPaymentStatus(payment, PaymentStatus.FAILED);
             return null; // No notification to send on failure
         }
