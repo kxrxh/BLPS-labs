@@ -71,7 +71,7 @@ public class SmtpManagedConnectionFactory implements ManagedConnectionFactory, R
         mailProps.put("mail.smtp.host", host);
         mailProps.put("mail.smtp.port", String.valueOf(port));
         mailProps.put("mail.smtp.auth", "true");
-        mailProps.put("mail.smtp.ssl.enable", "true");
+        mailProps.put("mail.smtp.ssl.enable", "false");
         mailProps.put("mail.smtp.starttls.enable", "true");
         mailProps.put("mail.smtp.user", userName);
         mailProps.put("mail.smtp.password", password);
