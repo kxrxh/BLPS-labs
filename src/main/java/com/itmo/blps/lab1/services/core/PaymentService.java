@@ -102,7 +102,6 @@ public class PaymentService {
                         public void afterCommit() {
                             stompProducer.sendNotification(finalPayload);
                         }
-                        // Add other required methods with empty bodies if needed
                     });
                     log.info("Payment successfully processed. Promotion activated. Receipt notification queued.");
                     return "Payment successfully processed. Promotion activated. Receipt notification queued.";
