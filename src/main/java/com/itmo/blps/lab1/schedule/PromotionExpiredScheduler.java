@@ -23,8 +23,7 @@ public class PromotionExpiredScheduler {
     private final NotificationService notificationService;
     private final StompNotificationProducer stompProducer;
 
-    // Schedule to run periodically, e.g., every 5 minutes
-    @Scheduled(cron = "${promotion.expired.scheduler.cron:0 */5 * * * ?}")
+    @Scheduled(cron = "${promotion.expired.scheduler.cron:0 */2 * * * ?}")
     @Transactional(readOnly = true) // Read-only as we only query and send notifications
     public void checkExpiredPromotions() {
         log.info("Starting scheduled check for expired promotions to send STOMP notifications...");
@@ -38,7 +37,8 @@ public class PromotionExpiredScheduler {
         for (Advertisement ad : expiredAdvertisements) {
             User user = ad.getAuthor();
             if (user == null) {
-                log.warn("Cannot send STOMP expired notification for advertisement ID {}: author is missing.", ad.getId());
+                log.warn("Cannot send STOMP expired notification for advertisement ID {}: author is missing.",
+                        ad.getId());
                 continue;
             }
 
@@ -58,4 +58,4 @@ public class PromotionExpiredScheduler {
 
         log.info("Scheduled STOMP notification check for expired promotions completed.");
     }
-} 
+}
