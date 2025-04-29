@@ -28,7 +28,7 @@ public class AdvertisementResponseDto {
     private Boolean isPromoted;
     private Promotion promotion;
     private LocalDateTime startDate;
-    private Integer durationInDays;
+    private Integer durationInMinutes;
     private List<POIWithDistanceDto> pois;
 
     public static AdvertisementResponseDto fromEntity(Advertisement advertisement, List<AdvertisementPOI> pois) {
@@ -46,10 +46,10 @@ public class AdvertisementResponseDto {
                 .isPromoted(advertisement.getIsPromoted())
                 .promotion(advertisement.getPromotion())
                 .startDate(advertisement.getStartDate())
-                .durationInDays(advertisement.getDurationInDays())
+                .durationInMinutes(advertisement.getDurationInMinutes())
                 .pois(pois.stream()
                         .map(POIWithDistanceDto::fromEntity)
                         .collect(Collectors.toList()))
                 .build();
     }
-} 
+}

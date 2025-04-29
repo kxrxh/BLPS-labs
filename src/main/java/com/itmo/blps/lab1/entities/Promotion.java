@@ -46,14 +46,5 @@ public class Promotion {
     private Double price;
 
     @Column(nullable = false)
-    private Integer durationInDays = 30; // Default duration of 30 days
-
-    @Column(nullable = true)
-    private LocalDateTime activationDate;
-
-    @Column(nullable = true)
-    private LocalDateTime expirationDate;
-
-    @Column(nullable = false, columnDefinition = "boolean default false")
-    private boolean reminderSent = false;
+    private Integer durationInMinutes = 2; // Default duration of 30 days in minutes
 }

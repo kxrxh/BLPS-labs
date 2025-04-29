@@ -1,10 +1,13 @@
 package com.itmo.blps.lab1.schedule;
 
+import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.messaging.StompNotificationProducer;
+import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
+import com.itmo.blps.lab1.service.EmailService;
 import com.itmo.blps.lab1.service.NotificationService;
 import com.itmo.blps.lab1.services.core.PromotionService;
 import lombok.RequiredArgsConstructor;
@@ -22,95 +25,60 @@ import java.util.List;
 @Slf4j
 public class PromotionExpirationScheduler {
 
-    private final PromotionRepository promotionRepository;
-    private final PromotionService promotionService;
-    private final PaymentRepository paymentRepository;
+    private final AdvertisementRepository advertisementRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
     private final StompNotificationProducer stompProducer;
 
     @Value("${promotion.reminder.days-before:3}")
     private int reminderDaysBefore;
 
     @Scheduled(cron = "${promotion.scheduler.cron}")
-    @Transactional(readOnly = true)
+    @Transactional
     public void checkPromotions() {
-        log.info("Starting scheduled check for promotions...");
+        log.info("Starting scheduled check for advertisement promotions nearing expiration...");
 
-        // Get current time
         LocalDateTime now = LocalDateTime.now();
-        // Calculate the date for sending reminders
-        LocalDateTime reminderDate = now.plusDays(reminderDaysBefore);
+        LocalDateTime reminderWindowEnd = now.plusDays(reminderDaysBefore);
 
-        // Find active promotions expiring in the reminder window that haven't had
-        // reminders sent
-        List<Promotion> promotionsToRemind = promotionRepository.findActivePromotionsExpiringBetweenAndNoReminder(
-                now, reminderDate);
+        List<Advertisement> adsToRemind = advertisementRepository
+                .findAdvertisementsForPromotionExpirationReminder(now, reminderWindowEnd);
 
-        log.info("Found {} promotions to send reminders for", promotionsToRemind.size());
+        log.info("Found {} advertisements to send promotion expiration reminders for.", adsToRemind.size());
 
-        // Send reminders for promotions
-        for (Promotion promotion : promotionsToRemind) {
+        for (Advertisement ad : adsToRemind) {
+            User user = ad.getAuthor();
+            if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+                log.warn("Cannot send reminder for advertisement ID {}: author or email is missing.", ad.getId());
+                continue;
+            }
+
+            LocalDateTime expirationDate = ad.getStartDate().plusMinutes(ad.getDurationInMinutes());
+
             try {
-                // Find user for this promotion via payment
-                User user = findUserForPromotion(promotion);
-                if (user == null) {
-                    log.warn("Could not find user for promotion ID {}, skipping reminder", promotion.getId());
-                    continue;
-                }
+                emailService.sendPromotionExpirationNotice(user, ad, expirationDate);
+                log.info("Promotion expiration email sent for advertisement ID {}", ad.getId());
+            } catch (Exception e) {
+                log.error("Failed to send promotion expiration email for advertisement ID {}: {}", ad.getId(),
+                        e.getMessage(), e);
+            }
 
-                // Create notification payload
-                String notificationPayload = notificationService.createPromotionReminderNotification(user, promotion);
-
-                // Send via STOMP
+            try {
+                String notificationPayload = notificationService.createPromotionExpirationNotification(user, ad,
+                        expirationDate);
                 stompProducer.sendNotification(notificationPayload);
-
-                log.info("Promotion reminder notification sent for promotion ID {}", promotion.getId());
-
-                // Mark reminder as sent in the database (will be done by the JMS consumer when
-                // processing)
-                // Not updating here to avoid race conditions and allow consistent updating in
-                // the consumer
+                log.info("Promotion expiration STOMP notification sent for advertisement ID {}", ad.getId());
             } catch (Exception e) {
-                log.error("Error sending reminder for promotion ID {}: {}", promotion.getId(), e.getMessage(), e);
-                // Continue with next promotion
+                log.error("Failed to send promotion expiration STOMP notification for advertisement ID {}: {}",
+                        ad.getId(), e.getMessage(), e);
             }
+
+            ad.setReminderSent(true);
+            advertisementRepository.save(ad);
+
+            log.info("Marked advertisement ID {} as reminder sent.", ad.getId());
         }
 
-        // Find expired promotions
-        List<Promotion> expiredPromotions = promotionRepository.findActivePromotionsExpiredBefore(now);
-
-        log.info("Found {} expired promotions to deactivate", expiredPromotions.size());
-
-        // Deactivate expired promotions
-        for (Promotion promotion : expiredPromotions) {
-            try {
-                User user = findUserForPromotion(promotion);
-                if (user != null) {
-                    // Create notification payload
-                    String notificationPayload = notificationService.createPromotionDeactivationNotification(user,
-                            promotion);
-
-                    // Send via STOMP
-                    stompProducer.sendNotification(notificationPayload);
-
-                    log.info("Promotion deactivation notification sent for promotion ID {}", promotion.getId());
-                }
-
-                // Deactivate promotion
-                promotionService.deactivatePromotion(promotion.getId());
-                log.info("Promotion ID {} deactivated due to expiration", promotion.getId());
-            } catch (Exception e) {
-                log.error("Error deactivating promotion ID {}: {}", promotion.getId(), e.getMessage(), e);
-                // Continue with next promotion
-            }
-        }
-
-        log.info("Scheduled check for promotions completed");
-    }
-
-    private User findUserForPromotion(Promotion promotion) {
-        return paymentRepository.findLatestSuccessfulPaymentByPromotionId(promotion.getId())
-                .map(payment -> payment.getPayer())
-                .orElse(null);
+        log.info("Scheduled check for advertisement promotions completed.");
     }
 }

@@ -181,11 +181,7 @@ public class PaymentService {
                     throw new NotFoundException("Promotion not found with id: " + promotionId);
                 }
 
-                // Set the activation and expiration dates
-                LocalDateTime now = LocalDateTime.now();
-                promotion.setActivationDate(now);
-                promotion.setExpirationDate(now.plusDays(promotion.getDurationInDays()));
-                promotion.setReminderSent(false);
+                promotion.setDurationInMinutes(promotion.getDurationInMinutes());
                 promotionRepository.save(promotion);
 
                 // Set the ad as promoted and activate the promotion

@@ -38,12 +38,12 @@ public class AdvertisementService {
 
     @Autowired
     public AdvertisementService(AdvertisementRepository advertisementRepository,
-                                PromotionRepository promotionRepository,
-                                POIService poiService,
-                                GeoService geoService,
-                                AdvertisementPOIRepository advertisementPOIRepository,
-                                UserService userService,
-                                PlatformTransactionManager transactionManager) {
+            PromotionRepository promotionRepository,
+            POIService poiService,
+            GeoService geoService,
+            AdvertisementPOIRepository advertisementPOIRepository,
+            UserService userService,
+            PlatformTransactionManager transactionManager) {
         this.advertisementRepository = advertisementRepository;
         this.promotionRepository = promotionRepository;
         this.poiService = poiService;
@@ -116,7 +116,8 @@ public class AdvertisementService {
                     .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
 
             if (advertisement.getIsPromoted()) {
-                throw new BadRequestException("Advertisement is already promoted. First remove the promotion and then add a new one.");
+                throw new BadRequestException(
+                        "Advertisement is already promoted. First remove the promotion and then add a new one.");
             }
 
             Promotion promotion = promotionRepository.findById(promotionId)
@@ -144,29 +145,29 @@ public class AdvertisementService {
     }
 
     public AdvertisementResponseDto activatePromotion(Long id) {
-         return transactionTemplate.execute(status -> {
+        return transactionTemplate.execute(status -> {
             Advertisement advertisement = advertisementRepository.findById(id)
                     .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
 
             if (advertisement.getPromotion() == null) {
-                 throw new BadRequestException("No promotion selected for advertisement id: " + id);
+                throw new BadRequestException("No promotion selected for advertisement id: " + id);
             }
 
             advertisement.setStartDate(LocalDateTime.now());
-            advertisement.setDurationInDays(advertisement.getPromotion().getDurationInDays());
+            advertisement.setDurationInMinutes(advertisement.getPromotion().getDurationInMinutes());
             advertisement.setIsPromoted(true);
             advertisement = advertisementRepository.save(advertisement);
 
             List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
             return AdvertisementResponseDto.fromEntity(advertisement, pois);
-         });
+        });
     }
 
     /**
      * Checks if the user with the given userId is the owner of the advertisement
      * with the given advertisementId.
      *
-     * @param userId The ID of the user.
+     * @param userId          The ID of the user.
      * @param advertisementId The ID of the advertisement.
      * @return true if the user is the owner, false otherwise.
      */
