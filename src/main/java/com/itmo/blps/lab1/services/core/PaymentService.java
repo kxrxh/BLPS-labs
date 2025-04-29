@@ -31,7 +31,6 @@ import java.time.LocalDateTime;
 import org.springframework.web.client.HttpClientErrorException;
 
 import com.itmo.blps.lab1.entities.Promotion;
-import com.itmo.blps.lab1.service.EmailService;
 import com.itmo.blps.lab1.service.NotificationService;
 import com.itmo.blps.lab1.messaging.StompNotificationProducer;
 
@@ -54,9 +53,6 @@ public class PaymentService {
 
     @Autowired
     private TransactionTemplate transactionTemplate;
-
-    @Autowired
-    private EmailService emailService;
 
     @Autowired
     private NotificationService notificationService;
@@ -157,7 +153,6 @@ public class PaymentService {
      */
     private String processPayment(Payment payment) {
         // 1. Log the payment processing start
-        Long paymentId = payment.getId();
         Long advertisementId = payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : null;
         Long promotionId = payment.getPromotion() != null ? payment.getPromotion().getId() : null;
 

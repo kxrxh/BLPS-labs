@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import com.itmo.blps.lab1.security.UserAuthentication;
-import java.time.LocalDateTime;
 
 @Service
 public class AdvertisementService {
