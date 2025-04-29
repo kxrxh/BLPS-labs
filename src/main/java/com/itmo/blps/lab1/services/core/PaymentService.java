@@ -87,35 +87,40 @@ public class PaymentService {
         def.setTimeout(30); // 30 seconds timeout
 
         // Process payment and get potential notification payload within transaction
-        String notificationPayload = transactionTemplate.execute(status -> {
+        return transactionTemplate.execute(status -> { // Return the result directly
+            String notificationPayload = null;
             try {
                 Payment payment = createPayment(paymentDto, userDetails);
                 // processPayment now returns the payload or null
-                return processPayment(payment);
+                notificationPayload = processPayment(payment);
+
+                // If a notification payload was generated, register synchronization *within* the transaction
+                if (notificationPayload != null) {
+                    String finalPayload = notificationPayload; // Need effectively final variable for lambda
+                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            stompProducer.sendNotification(finalPayload);
+                        }
+                        // Add other required methods with empty bodies if needed
+                    });
+                    // Return success message immediately, notification happens after commit
+                    return "Payment successfully processed. Promotion activated. Receipt notification queued.";
+                } else {
+                    // Determine if failure occurred or just no notification needed
+                    // This could be because payment simulation failed or data was missing
+                    return "Payment processing finished (potentially failed or missing data for notification).";
+                }
+
             } catch (Exception e) {
                 // Mark transaction for rollback
                 status.setRollbackOnly();
                 // Re-throw as a runtime exception to propagate
-                throw new RuntimeException("Payment creation and processing failed: " + e.getMessage(), e);
+                // Alternatively, return a specific error message string here
+                // throw new RuntimeException("Payment creation and processing failed: " + e.getMessage(), e);
+                 return "Payment creation and processing failed: " + e.getMessage(); // Return error message
             }
         });
-
-        // If a notification payload was generated, send it after commit
-        if (notificationPayload != null) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    stompProducer.sendNotification(notificationPayload);
-                }
-            });
-            return "Payment successfully processed. Promotion activated. Receipt notification queued.";
-        } else {
-            // Determine if failure occurred or just no notification needed
-            // We might need a more sophisticated way to return status if the transaction
-            // rolled back vs. payment failed simulation
-            // For now, assume null payload means simulated failure or incomplete data
-            return "Payment processing finished (potentially failed or missing data for notification).";
-        }
     }
 
     public Payment createPayment(PaymentDto paymentDto, UserDetails userDetails) {
