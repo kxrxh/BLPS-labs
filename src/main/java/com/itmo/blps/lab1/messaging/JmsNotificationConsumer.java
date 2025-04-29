@@ -36,7 +36,7 @@ public class JmsNotificationConsumer {
     private final AdvertisementRepository advertisementRepository;
     private final ObjectMapper objectMapper;
 
-    @JmsListener(destination = RabbitMQConfig.QUEUE_NAME)
+    @JmsListener(destination = RabbitMQConfig.QUEUE_NAME, concurrency = "${jms.listener.concurrency:1-1}")
     public void receiveNotification(Message message) {
         log.info("Received raw JMS message from destination '{}'", RabbitMQConfig.QUEUE_NAME);
         try {
