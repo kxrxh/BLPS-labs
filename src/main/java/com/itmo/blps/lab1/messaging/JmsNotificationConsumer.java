@@ -10,7 +10,8 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.repositories.UserRepository;
 import com.itmo.blps.lab1.service.EmailService;
-import com.itmo.blps.lab1.service.NotificationService;
+import com.itmo.blps.lab1.service.NotificationType;
+
 import jakarta.jms.BytesMessage;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
@@ -18,29 +19,22 @@ import jakarta.jms.TextMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class JmsNotificationConsumer {
 
-    private final NotificationService notificationService;
     private final EmailService emailService;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final AdvertisementRepository advertisementRepository;
     private final ObjectMapper objectMapper;
-
-    // Number of minutes before expiration to send notification
-    private static final int MINUTES_BEFORE_EXPIRATION = 1;
 
     @JmsListener(destination = RabbitMQConfig.QUEUE_NAME)
     public void receiveNotification(Message message) {
@@ -83,17 +77,19 @@ public class JmsNotificationConsumer {
             JsonNode node = objectMapper.readTree(payload);
             String type = node.path("type").asText();
 
-            // Handle payment receipt and promotion reminder notifications through JMS
-            switch (type) {
-                case "PAYMENT_RECEIPT":
+            switch (NotificationType.fromString(type)) {
+                case PAYMENT_RECEIPT:
                     processPaymentReceipt(node);
                     break;
-                case "PROMOTION_REMINDER":
-                    processPromotionReminder(node);
+                case PROMOTION_ENDING_SOON:
+                    processPromotionEndingNotice(node);
+                    break;
+                case PROMOTION_EXPIRED:
+                    processPromotionExpired(node);
                     break;
                 default:
                     log.info(
-                            "Ignoring notification of type: {} - only PAYMENT_RECEIPT and PROMOTION_REMINDER are processed via JMS",
+                            "Ignoring notification of type: {} - only PAYMENT_RECEIPT, PROMOTION_REMINDER, and PROMOTION_EXPIRED are processed via JMS",
                             type);
             }
         } catch (Exception e) {
@@ -119,79 +115,60 @@ public class JmsNotificationConsumer {
         }
     }
 
-    private void processPromotionReminder(JsonNode node) {
+    private void processPromotionEndingNotice(JsonNode node) {
         long advertisementId = node.path("advertisementId").asLong();
         long userId = node.path("userId").asLong();
 
-        log.info("Processing promotion reminder notification for advertisement ID: {}, user ID: {}", advertisementId,
+        log.info("Processing promotion ending soon notification for advertisement ID: {}, user ID: {}", advertisementId,
                 userId);
 
         Optional<Advertisement> advertisementOpt = advertisementRepository.findById(advertisementId);
-        Optional<User> userOpt = userRepository.findById(userId);
 
-        if (advertisementOpt.isPresent() && userOpt.isPresent()) {
+        if (advertisementOpt.isPresent()) {
             Advertisement advertisement = advertisementOpt.get();
-            User user = userOpt.get();
 
-            if (advertisement.getStartDate() != null && advertisement.getDurationInMinutes() != null
-                    && advertisement.getIsPromoted()) {
-                LocalDateTime expirationDate = advertisement.getStartDate()
-                        .plusMinutes(advertisement.getDurationInMinutes());
-                emailService.sendPromotionExpirationNotice(user, advertisement, expirationDate);
-                log.info("Promotion reminder email sent for advertisement ID: {}", advertisementId);
+            if (advertisement.getIsPromoted()) {
+                emailService.sendPromotionEndingNotice(advertisement);
+                log.info("Promotion ending soon email sent for advertisement ID: {}", advertisementId);
             } else {
-                log.warn("Advertisement has no start date or duration: {}", advertisementId);
+                log.warn("Advertisement {} is not marked as promoted. Skipping ending soon notice.", advertisementId);
             }
         } else {
             log.warn(
-                    "Could not send promotion reminder: Advertisement or User not found (Advertisement ID: {}, User ID: {})",
+                    "Could not send promotion ending notice: Advertisement not found (Advertisement ID: {}, User ID: {})",
                     advertisementId, userId);
         }
     }
 
-    /**
-     * Scheduled job that runs periodically to check for promotions that are about
-     * to expire
-     * and sends notifications to users.
-     * Changed to run every 5 minutes for easier testing.
-     */
-    @Scheduled(cron = "0 */5 * * * ?") // Run every 5 minutes
-    public void checkExpiringPromotions() {
-        log.info("Checking for promotions that are about to expire...");
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime targetDate = now.plusMinutes(MINUTES_BEFORE_EXPIRATION);
+    @Transactional
+    private void processPromotionExpired(JsonNode node) {
+        long advertisementId = node.path("advertisementId").asLong();
+        long userId = node.path("userId").asLong();
+        log.info("Processing promotion expired notification for advertisement ID: {}, user ID: {}", advertisementId,
+                userId);
 
-        // Get all active advertisements with promotions
-        List<Advertisement> advertisements = advertisementRepository.findAll().stream()
-                .filter(ad -> ad.getIsActive() && ad.getIsPromoted() && ad.getStartDate() != null
-                        && ad.getDurationInMinutes() != null)
-                .filter(ad -> {
-                    LocalDateTime expirationDate = ad.getStartDate().plusMinutes(ad.getDurationInMinutes());
-                    // Check if expiration is after now and before the target notification time
-                    return expirationDate.isAfter(now) &&
-                            expirationDate.isBefore(targetDate);
-                })
-                .collect(Collectors.toList());
+        Optional<Advertisement> advertisementOpt = advertisementRepository.findById(advertisementId);
 
-        log.info("Found {} advertisements with promotions expiring in the next {} minutes",
-                advertisements.size(), MINUTES_BEFORE_EXPIRATION);
-
-        // Send notifications for each expiring promotion
-        for (Advertisement ad : advertisements) {
+        if (advertisementOpt.isPresent()) {
+            Advertisement advertisement = advertisementOpt.get();
             try {
-                User user = ad.getAuthor();
-                if (user != null) {
-                    LocalDateTime expirationDate = ad.getStartDate().plusMinutes(ad.getDurationInMinutes());
-                    emailService.sendPromotionExpirationNotice(user, ad, expirationDate);
-                    log.info("Sent promotion expiration notice for advertisement ID: {}, expiring on: {}",
-                            ad.getId(), expirationDate);
-                } else {
-                    log.warn("Cannot send promotion expiration notice: No author found for advertisement ID: {}",
-                            ad.getId());
-                }
+                emailService.sendPromotionExpired(advertisement);
+                log.info("Promotion expired email sent for advertisement ID: {}", advertisementId);
+
+                advertisement.setIsPromoted(false);
+                advertisement.setPromotion(null);
+                advertisement.setStartDate(null);
+                advertisement.setDurationInMinutes(null);
+                advertisementRepository.save(advertisement);
+                log.info("Marked promotion as expired in DB for advertisement ID: {}.", advertisement.getId());
+
             } catch (Exception e) {
-                log.error("Error sending promotion expiration notice for advertisement ID: {}", ad.getId(), e);
+                log.error("Error processing expired promotion message for advertisement ID: {}", advertisementId, e);
             }
+        } else {
+            log.warn(
+                    "Could not process promotion expired notice: Advertisement not found (Advertisement ID: {}, User ID: {})",
+                    advertisementId, userId);
         }
     }
 }

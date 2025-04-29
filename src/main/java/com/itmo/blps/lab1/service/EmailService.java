@@ -2,7 +2,6 @@ package com.itmo.blps.lab1.service;
 
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
-import com.itmo.blps.lab1.entities.Promotion;
 import com.itmo.blps.lab1.entities.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -50,10 +49,7 @@ public class EmailService {
         context.setVariable("advertisementId",
                 payment.getAdvertisement() != null ? payment.getAdvertisement().getId() : "N/A");
         context.setVariable("paymentId", payment.getId());
-        // Add any other variables needed for the template
 
-        // Process the template
-        // Template path relative to src/main/resources/templates/
         String htmlContent = templateEngine.process("email/payment-receipt", context);
 
         String subject = "Payment Receipt - Promotion Activated";
@@ -62,85 +58,44 @@ public class EmailService {
         sendHtmlMessage(user.getEmail(), subject, htmlContent);
     }
 
-    // Promotion expiration is tied to Advertisement, not Promotion itself.
-    // This method's logic is likely flawed based on the Advertisement entity
-    // design.
-    /*
-     * public void sendPromotionReminder(User user, Promotion promotion) {
-     * if (user.getEmail() == null || user.getEmail().isBlank()) {
-     * log.warn("Cannot send promotion reminder: User {} has no email address.",
-     * user.getUsername());
-     * return;
-     * }
-     * String subject = "Promotion Reminder - Nearing Expiration";
-     * String text = String.format(
-     * "Dear %s,\n\nThis is a reminder that your promotion '%s' is set to expire soon (on %s).\n\nRegards,\nThe Team"
-     * ,
-     * user.getUsername(),
-     * promotion.getName(),
-     * promotion.getExpirationDate() != null ?
-     * promotion.getExpirationDate().toLocalDate().toString() : "N/A"); // Error:
-     * getExpirationDate() undefined
-     * sendSimpleMessage(user.getEmail(), subject, text);
-     * }
-     */
-
-    // This method seems redundant or potentially misleading as Promotions don't
-    // deactivate independently.
-    /*
-     * public void sendPromotionDeactivationNotice(User user, Promotion promotion) {
-     * if (user.getEmail() == null || user.getEmail().isBlank()) {
-     * log.
-     * warn("Cannot send promotion deactivation notice: User {} has no email address."
-     * , user.getUsername());
-     * return;
-     * }
-     * String subject = "Promotion Deactivated";
-     * String text = String.format(
-     * "Dear %s,\n\nYour promotion '%s' has now expired and has been deactivated.\n\nRegards,\nThe Team"
-     * ,
-     * user.getUsername(),
-     * promotion.getName());
-     * sendSimpleMessage(user.getEmail(), subject, text);
-     * }
-     */
-
-    public void sendPaymentReminder(User user, Payment payment) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Cannot send payment reminder: User {} has no email address.", user.getUsername());
+    public void sendPromotionEndingNotice(Advertisement advertisement) {
+        if (advertisement.getAuthor().getEmail() == null || advertisement.getAuthor().getEmail().isBlank()) {
+            log.warn("Cannot send promotion ending notice: User {} has no email address.",
+                    advertisement.getAuthor().getUsername());
             return;
         }
-        String subject = "Payment Reminder - Action Required";
+        String subject = "Promotion Ending Soon - " + advertisement.getName();
         String text = String.format(
-                "Dear %s,\n\nThis is a reminder that your payment of %.2f for the promotion '%s' (Payment ID: %d) is still pending.\n\nPlease complete your payment soon.\n\nRegards,\nThe Team",
-                user.getUsername(),
-                payment.getAmount(),
-                payment.getPromotion() != null ? payment.getPromotion().getName() : "N/A", // Handle null promotion
-                payment.getId());
-        sendSimpleMessage(user.getEmail(), subject, text);
+                "Dear %s,\n\nYour promoted advertisement '%s' will expire on %s.\n\n" +
+                        "If you wish to continue promoting this advertisement, please visit your dashboard to renew the promotion.\n\n"
+                        +
+                        "Regards,\nThe Team",
+                advertisement.getAuthor().getUsername(), advertisement.getName(), advertisement.getEndDate());
+        sendSimpleMessage(advertisement.getAuthor().getEmail(), subject, text);
+        log.info("Promotion ending notice sent to {} for advertisement '{}'", advertisement.getAuthor().getEmail(),
+                advertisement.getName());
     }
 
     /**
      * Sends a notification to the user that their advertisement promotion is about
      * to expire
      */
-    public void sendPromotionExpirationNotice(User user, Advertisement advertisement, LocalDateTime expirationDate) {
-        if (user.getEmail() == null || user.getEmail().isBlank()) {
-            log.warn("Cannot send promotion expiration notice: User {} has no email address.", user.getUsername());
+    public void sendPromotionExpired(Advertisement advertisement) {
+        if (advertisement.getAuthor().getEmail() == null || advertisement.getAuthor().getEmail().isBlank()) {
+            log.warn("Cannot send promotion expired notice: User {} has no email address.",
+                    advertisement.getAuthor().getUsername());
             return;
         }
-
-        String subject = "Promotion Expiring Soon - " + advertisement.getName();
+        String subject = "Promotion Expired - " + advertisement.getName();
         String text = String.format(
-                "Dear %s,\n\nYour promoted advertisement '%s' will expire on %s.\n\n" +
+                "Dear %s,\n\nYour promoted advertisement '%s' has expired.\n\n" +
                         "If you wish to continue promoting this advertisement, please visit your dashboard to renew the promotion.\n\n"
                         +
                         "Regards,\nThe Team",
-                user.getUsername(),
-                advertisement.getName(),
-                expirationDate.toLocalDate().toString());
-
-        sendSimpleMessage(user.getEmail(), subject, text);
+                advertisement.getAuthor().getUsername(), advertisement.getName());
+        sendSimpleMessage(advertisement.getAuthor().getEmail(), subject, text);
+        log.info("Promotion expired notice sent to {} for advertisement '{}'", advertisement.getAuthor().getEmail(),
+                advertisement.getName());
     }
 
     private void sendSimpleMessage(String to, String subject, String text) {
@@ -154,7 +109,6 @@ public class EmailService {
             log.info("Email sent successfully to {} with subject: {}", to, subject);
         } catch (MailException e) {
             log.error("Failed to send email to {} with subject: {}", to, subject, e);
-            // Handle exception appropriately - maybe queue for retry?
         }
     }
 
@@ -169,15 +123,13 @@ public class EmailService {
             helper.setFrom(mailFrom);
             helper.setTo(to);
             helper.setSubject(subject);
-            helper.setText(htmlBody, true); // true = isHtml
+            helper.setText(htmlBody, true);
 
             mailSender.send(mimeMessage);
             log.info("HTML Email sent successfully to {} with subject: {}", to, subject);
         } catch (MessagingException | MailException e) {
             log.error("Failed to send HTML email to {} with subject: {}", to, subject, e);
-            // Handle exception appropriately
         }
     }
 
-    // Add more methods as needed (e.g., registration confirmation)
 }

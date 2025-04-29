@@ -181,12 +181,10 @@ public class PaymentService {
                     throw new NotFoundException("Promotion not found with id: " + promotionId);
                 }
 
-                promotion.setDurationInMinutes(promotion.getDurationInMinutes());
-                promotionRepository.save(promotion);
-
                 // Set the ad as promoted and activate the promotion
                 ad.setIsPromoted(true);
-                // TODO: Set ad.setPromotion(promotion) if needed
+                ad.setStartDate(LocalDateTime.now());
+                ad.setDurationInMinutes(promotion.getDurationInMinutes());
                 advertisementRepository.save(ad);
 
                 // Send a receipt notification via STOMP

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.User;
+import com.itmo.blps.lab1.service.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class NotificationService {
      */
     public String createPaymentReceiptNotification(User user, Payment payment) {
         ObjectNode node = objectMapper.createObjectNode()
-                .put("type", "PAYMENT_RECEIPT")
+                .put("type", NotificationType.PAYMENT_RECEIPT.toString())
                 .put("timestamp", LocalDateTime.now().format(formatter))
                 .put("userId", user.getId())
                 .put("paymentId", payment.getId());
@@ -37,9 +38,9 @@ public class NotificationService {
     /**
      * Creates a promotion reminder notification message in JSON format
      */
-    public String createPromotionReminderNotification(User user, Advertisement advertisement) {
+    public String createPromotionEndingSoonNotification(User user, Advertisement advertisement) {
         ObjectNode node = objectMapper.createObjectNode()
-                .put("type", "PROMOTION_REMINDER")
+                .put("type", NotificationType.PROMOTION_ENDING_SOON.toString())
                 .put("timestamp", LocalDateTime.now().format(formatter))
                 .put("userId", user.getId())
                 .put("advertisementId", advertisement.getId())
@@ -50,11 +51,11 @@ public class NotificationService {
     }
 
     /**
-     * Creates a promotion deactivation notification message in JSON format
+     * Creates a promotion expiration notification message in JSON format
      */
-    public String createPromotionDeactivationNotification(User user, Advertisement advertisement) {
+    public String createPromotionExpiredNotification(User user, Advertisement advertisement) {
         ObjectNode node = objectMapper.createObjectNode()
-                .put("type", "PROMOTION_DEACTIVATION")
+                .put("type", NotificationType.PROMOTION_EXPIRED.toString())
                 .put("timestamp", LocalDateTime.now().format(formatter))
                 .put("userId", user.getId())
                 .put("advertisementId", advertisement.getId());

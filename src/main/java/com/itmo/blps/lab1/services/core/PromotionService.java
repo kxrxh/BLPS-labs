@@ -11,10 +11,7 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
-import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.service.EmailService;
-import com.itmo.blps.lab1.entities.PaymentStatus;
-
 import io.basc.framework.lang.NotFoundException;
 
 import java.util.List;
@@ -115,40 +112,18 @@ public class PromotionService {
         // Remove promotion from the associated advertisement
         if (adOpt.isPresent()) {
             Advertisement ad = adOpt.get();
-            // ad.setPromotion(null); // Consider if this is desired
+            if (ad.getIsPromoted()) {
+                emailService.sendPromotionExpired(ad);
+            }
+            ad.setPromotion(null);
             ad.setIsPromoted(false);
+            ad.setStartDate(null);
+            ad.setDurationInMinutes(null);
             advertisementRepository.save(ad);
         }
 
         // Deactivate the promotion
         promotion.setIsActive(false);
         promotionRepository.save(promotion);
-
-        // Send deactivation email
-        User userToNotify = findUserForPromotion(promotion);
-        if (userToNotify != null) {
-            emailService.sendPromotionDeactivationNotice(userToNotify, ad);
-        } else {
-            System.err.println("Warning: Could not find user for promotion ID " + id + " to send deactivation notice.");
-        }
-    }
-
-    private User findUserForPromotion(Promotion promotion) {
-        // Find the latest successful payment for this specific promotion
-        Optional<Payment> paymentOpt = paymentRepository
-                .findFirstByPromotionIdAndStatusOrderByCreatedAtDesc(promotion.getId(), PaymentStatus.SUCCESS);
-
-        if (paymentOpt.isEmpty()) {
-            System.err.println("Warning: No successful payment found for promotion ID " + promotion.getId()
-                    + " to determine user.");
-            return null;
-        }
-
-        User payer = paymentOpt.get().getPayer();
-        if (payer == null) {
-            System.err.println("Warning: Successful payment ID " + paymentOpt.get().getId() + " for promotion ID "
-                    + promotion.getId() + " has no associated payer.");
-        }
-        return payer;
     }
 }

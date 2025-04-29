@@ -124,7 +124,9 @@ public class AdvertisementService {
                     .orElseThrow(() -> new NotFoundException("Promotion not found with id: " + promotionId));
 
             advertisement.setPromotion(promotion);
-            advertisement.setIsPromoted(false); // Should be false initially until activated
+            advertisement.setIsPromoted(false);
+            advertisement.setStartDate(null);
+            advertisement.setDurationInMinutes(null);
             advertisement = advertisementRepository.save(advertisement);
             List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
             return AdvertisementResponseDto.fromEntity(advertisement, pois);
@@ -138,26 +140,9 @@ public class AdvertisementService {
 
             advertisement.setPromotion(null);
             advertisement.setIsPromoted(false);
+            advertisement.setStartDate(null);
+            advertisement.setDurationInMinutes(null);
             advertisement = advertisementRepository.save(advertisement);
-            List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
-            return AdvertisementResponseDto.fromEntity(advertisement, pois);
-        });
-    }
-
-    public AdvertisementResponseDto activatePromotion(Long id) {
-        return transactionTemplate.execute(status -> {
-            Advertisement advertisement = advertisementRepository.findById(id)
-                    .orElseThrow(() -> new NotFoundException("Advertisement not found with id: " + id));
-
-            if (advertisement.getPromotion() == null) {
-                throw new BadRequestException("No promotion selected for advertisement id: " + id);
-            }
-
-            advertisement.setStartDate(LocalDateTime.now());
-            advertisement.setDurationInMinutes(advertisement.getPromotion().getDurationInMinutes());
-            advertisement.setIsPromoted(true);
-            advertisement = advertisementRepository.save(advertisement);
-
             List<AdvertisementPOI> pois = advertisementPOIRepository.findByAdvertisementId(id);
             return AdvertisementResponseDto.fromEntity(advertisement, pois);
         });

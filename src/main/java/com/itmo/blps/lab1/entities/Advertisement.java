@@ -88,4 +88,10 @@ public class Advertisement {
     @Column(nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean reminderSent = false;
+
+    public LocalDateTime getEndDate() {
+        if (startDate == null || durationInMinutes == null)
+            return null;
+        return startDate.plusMinutes(durationInMinutes);
+    }
 }
