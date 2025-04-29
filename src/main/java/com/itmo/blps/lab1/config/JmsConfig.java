@@ -1,65 +1,33 @@
 package com.itmo.blps.lab1.config;
 
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
-import com.rabbitmq.jms.admin.RMQDestination;
 import jakarta.jms.ConnectionFactory;
-import jakarta.jms.Destination;
-import jakarta.jms.JMSException;
-import jakarta.jms.Session;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.support.converter.SimpleMessageConverter;
-import org.springframework.jms.support.destination.DestinationResolver;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 
 @Configuration
-@EnableJms
 public class JmsConfig {
 
     @Value("${spring.rabbitmq.host}")
-    private String rabbitHost;
+    private String host;
 
     @Value("${spring.rabbitmq.port}")
-    private int rabbitPort;
+    private int port;
 
     @Value("${spring.rabbitmq.username}")
-    private String rabbitUsername;
+    private String username;
 
     @Value("${spring.rabbitmq.password}")
-    private String rabbitPassword;
+    private String password;
 
     @Bean
     public ConnectionFactory connectionFactory() {
         RMQConnectionFactory connectionFactory = new RMQConnectionFactory();
-        connectionFactory.setHost(rabbitHost);
-        connectionFactory.setPort(rabbitPort);
-        connectionFactory.setUsername(rabbitUsername);
-        connectionFactory.setPassword(rabbitPassword);
+        connectionFactory.setHost(host);
+        connectionFactory.setPort(port);
+        connectionFactory.setUsername(username);
+        connectionFactory.setPassword(password);
         return connectionFactory;
-    }
-
-    @Bean
-    public DefaultJmsListenerContainerFactory jmsListenerContainerFactory(ConnectionFactory connectionFactory) {
-        DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-        factory.setConnectionFactory(connectionFactory);
-        factory.setMessageConverter(new SimpleMessageConverter());
-
-        factory.setDestinationResolver(new DestinationResolver() {
-            @Override
-            public @NonNull Destination resolveDestinationName(@Nullable Session session,
-                    @Nullable String destinationName, boolean pubSubDomain) throws JMSException {
-                RMQDestination jmsDestination = new RMQDestination();
-                jmsDestination.setDestinationName(destinationName);
-                jmsDestination.setAmqpQueueName(destinationName);
-                jmsDestination.setAmqp(true);
-                return jmsDestination;
-            }
-        });
-        return factory;
     }
 }

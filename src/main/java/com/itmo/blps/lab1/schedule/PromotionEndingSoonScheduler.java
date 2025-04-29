@@ -7,6 +7,7 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,7 @@ public class PromotionEndingSoonScheduler {
     private int reminderMinutesBefore;
 
     @Scheduled(cron = "${promotion.scheduler.cron:0 */1 * * * ?}")
+    @SchedulerLock(name = "checkPromotionsEndingSoon", lockAtMostFor = "1M", lockAtLeastFor = "10S")
     @Transactional(readOnly = true)
     public void checkPromotions() {
         log.info("Starting scheduled check to send STOMP notifications for promotions expiring within {} minutes...", reminderMinutesBefore);

@@ -180,6 +180,19 @@
 			<artifactId>spring-boot-starter-thymeleaf</artifactId>
 		</dependency>
 
+		<!-- Added for ShedLock -->
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-spring</artifactId>
+			<version>5.14.0</version> <!-- Check for the latest compatible version -->
+		</dependency>
+		<dependency>
+			<groupId>net.javacrumbs.shedlock</groupId>
+			<artifactId>shedlock-provider-jdbc-template</artifactId>
+			<version>5.14.0</version> <!-- Use the same version as shedlock-spring -->
+		</dependency>
+		<!-- End ShedLock -->
+
 	</dependencies>
 
 	<build>

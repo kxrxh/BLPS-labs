@@ -7,6 +7,7 @@ import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 import com.itmo.blps.lab1.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional; // Read-only transaction
@@ -24,6 +25,7 @@ public class PromotionExpiredScheduler {
     private final StompNotificationProducer stompProducer;
 
     @Scheduled(cron = "${promotion.expired.scheduler.cron:0 */2 * * * ?}")
+    @SchedulerLock(name = "checkExpiredPromotions", lockAtMostFor = "1M", lockAtLeastFor = "10S")
     @Transactional(readOnly = true) // Read-only as we only query and send notifications
     public void checkExpiredPromotions() {
         log.info("Starting scheduled check for expired promotions to send STOMP notifications...");
