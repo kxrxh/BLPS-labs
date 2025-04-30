@@ -2,7 +2,6 @@ package com.itmo.blps.lab1.messaging;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.itmo.blps.lab1.config.RabbitMQConfig;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.User;
