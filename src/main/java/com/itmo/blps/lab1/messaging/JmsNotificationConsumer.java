@@ -12,13 +12,12 @@ import com.itmo.blps.lab1.repositories.UserRepository;
 import com.itmo.blps.lab1.service.EmailService;
 import com.itmo.blps.lab1.service.NotificationType;
 
-import jakarta.jms.BytesMessage;
-import jakarta.jms.JMSException;
-import jakarta.jms.Message;
-import jakarta.jms.TextMessage;
+import jakarta.jms.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.jms.annotation.JmsListener;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +27,24 @@ import java.util.Optional;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class JmsNotificationConsumer {
+public class JmsNotificationConsumer implements MessageListener, InitializingBean, DisposableBean {
 
     private final EmailService emailService;
     private final PaymentRepository paymentRepository;
     private final UserRepository userRepository;
     private final AdvertisementRepository advertisementRepository;
     private final ObjectMapper objectMapper;
+    private final ConnectionFactory connectionFactory;
+    @Qualifier("jmsQueue")
+    private final Queue destinationQueue;
 
-    @JmsListener(destination = RabbitMQConfig.QUEUE_NAME, concurrency = "${jms.listener.concurrency:1-1}")
-    public void receiveNotification(Message message) {
-        log.info("Received raw JMS message from destination '{}'", RabbitMQConfig.QUEUE_NAME);
+    private Connection connection;
+    private Session session;
+    private MessageConsumer consumer;
+
+    @Override
+    public void onMessage(Message message) {
+        log.info("Received raw JMS message via manual listener from destination '{}'", getQueueNameSafe());
         try {
             String payload = null;
             if (message instanceof TextMessage) {
@@ -46,29 +52,28 @@ public class JmsNotificationConsumer {
                 log.info("Message is TextMessage. Payload: {}", payload);
             } else if (message instanceof BytesMessage) {
                 BytesMessage bytesMessage = (BytesMessage) message;
+                bytesMessage.reset();
                 byte[] body = new byte[(int) bytesMessage.getBodyLength()];
                 bytesMessage.readBytes(body);
                 payload = new String(body, StandardCharsets.UTF_8);
                 log.info("Message is BytesMessage. Payload decoded from bytes: {}", payload);
             } else {
-                log.warn("Received message of unexpected type: {}. Attempting toString(): {}",
-                        message.getClass().getName(), message.toString());
-                payload = message.toString();
+                log.warn("Received message of unexpected type: {}. Ignoring.",
+                        message.getClass().getName());
+                payload = null;
             }
 
             if (payload != null) {
                 log.info("Processing extracted payload: {}", payload);
                 processNotification(payload);
             } else {
-                log.warn("Could not extract payload from message.");
+                log.warn("Could not extract processable payload from message of type: {}",
+                        message.getClass().getName());
             }
-
-            // Acknowledgment is handled automatically by the listener container by default
         } catch (JMSException e) {
-            log.error("JMSException while processing received message from destination '{}'", RabbitMQConfig.QUEUE_NAME,
-                    e);
+            log.error("JMSException while processing received message from destination '{}'", getQueueNameSafe(), e);
         } catch (Exception e) {
-            log.error("Error processing received JMS message from destination '{}'", RabbitMQConfig.QUEUE_NAME, e);
+            log.error("Error processing received JMS message from destination '{}'", getQueueNameSafe(), e);
         }
     }
 
@@ -169,6 +174,79 @@ public class JmsNotificationConsumer {
             log.warn(
                     "Could not process promotion expired notice: Advertisement not found (Advertisement ID: {}, User ID: {})",
                     advertisementId, userId);
+        }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        try {
+            String queueName = getQueueNameSafe();
+            log.info("Initializing JMS listener manually for destination '{}'", queueName);
+            connection = connectionFactory.createConnection();
+            connection.setExceptionListener(
+                    ex -> log.error("JMS Connection Exception occurred on listener for queue '{}'.", queueName, ex));
+
+            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            consumer = session.createConsumer(destinationQueue);
+            consumer.setMessageListener(this);
+            connection.start();
+            log.info("Manual JMS listener started successfully for destination '{}'.", queueName);
+        } catch (JMSException e) {
+            log.error("Failed to start manual JMS listener for destination '{}'", getQueueNameSafe(), e);
+            try {
+                destroy();
+            } catch (Exception cleanupEx) {
+                log.error("Exception during cleanup after failed initialization.", cleanupEx);
+                e.addSuppressed(cleanupEx);
+            }
+            throw new RuntimeException("Failed to initialize JMS listener", e);
+        } catch (Exception e) {
+            log.error("Non-JMS Exception during JMS listener initialization for destination '{}'", getQueueNameSafe(),
+                    e);
+            throw new RuntimeException("Failed to initialize JMS listener due to non-JMS error", e);
+        }
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        String queueName = getQueueNameSafe();
+        log.info("Shutting down manual JMS listener for destination '{}'", queueName);
+        try {
+            if (consumer != null) {
+                log.debug("Closing JMS Consumer for queue '{}'", queueName);
+                consumer.close();
+                consumer = null;
+            }
+        } catch (JMSException e) {
+            log.error("Error closing JMS Consumer for queue '{}'", queueName, e);
+        }
+        try {
+            if (session != null) {
+                log.debug("Closing JMS Session for queue '{}'", queueName);
+                session.close();
+                session = null;
+            }
+        } catch (JMSException e) {
+            log.error("Error closing JMS Session for queue '{}'", queueName, e);
+        }
+        try {
+            if (connection != null) {
+                log.debug("Closing JMS Connection for queue '{}'", queueName);
+                connection.close();
+                connection = null;
+            }
+        } catch (JMSException e) {
+            log.error("Error closing JMS Connection for queue '{}'", queueName, e);
+        }
+        log.info("Manual JMS listener shut down complete for destination '{}'.", queueName);
+    }
+
+    private String getQueueNameSafe() {
+        try {
+            return destinationQueue != null ? destinationQueue.getQueueName() : "UNKNOWN";
+        } catch (JMSException e) {
+            log.warn("Could not retrieve queue name", e);
+            return "ERROR_RETRIEVING_NAME";
         }
     }
 }
