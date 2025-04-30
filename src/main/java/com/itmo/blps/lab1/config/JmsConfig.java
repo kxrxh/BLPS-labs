@@ -6,6 +6,7 @@ import jakarta.jms.ConnectionFactory;
 import jakarta.jms.Destination;
 import jakarta.jms.JMSException;
 import jakarta.jms.Session;
+import jakarta.jms.Queue;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -32,6 +33,15 @@ public class JmsConfig {
 
     @Value("${spring.rabbitmq.password}")
     private String rabbitPassword;
+
+    @Bean(name = "jmsQueue")
+    public Queue queue() {
+        RMQDestination jmsDestination = new RMQDestination();
+        jmsDestination.setDestinationName(RabbitMQConfig.QUEUE_NAME);
+        jmsDestination.setAmqpQueueName(RabbitMQConfig.QUEUE_NAME);
+        jmsDestination.setAmqp(true);
+        return jmsDestination;
+    }
 
     @Bean
     public ConnectionFactory connectionFactory() {
