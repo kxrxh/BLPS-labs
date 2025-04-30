@@ -12,7 +12,6 @@ import com.itmo.blps.lab1.service.EmailService;
 import com.itmo.blps.lab1.service.NotificationType;
 
 import jakarta.jms.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -26,7 +25,6 @@ import java.util.Optional;
 
 @Component
 @Slf4j
-@RequiredArgsConstructor
 public class JmsNotificationConsumer implements MessageListener, InitializingBean, DisposableBean {
 
     private final EmailService emailService;
@@ -43,6 +41,24 @@ public class JmsNotificationConsumer implements MessageListener, InitializingBea
     private Connection connection;
     private Session session;
     private MessageConsumer consumer;
+
+    public JmsNotificationConsumer(EmailService emailService,
+                                 PaymentRepository paymentRepository,
+                                 UserRepository userRepository,
+                                 AdvertisementRepository advertisementRepository,
+                                 ObjectMapper objectMapper,
+                                 ConnectionFactory connectionFactory,
+                                 @Qualifier("jmsQueue") Queue destinationQueue,
+                                 @Qualifier("jmsMessageProcessorExecutor") TaskExecutor taskExecutor) {
+        this.emailService = emailService;
+        this.paymentRepository = paymentRepository;
+        this.userRepository = userRepository;
+        this.advertisementRepository = advertisementRepository;
+        this.objectMapper = objectMapper;
+        this.connectionFactory = connectionFactory;
+        this.destinationQueue = destinationQueue;
+        this.taskExecutor = taskExecutor;
+    }
 
     @Override
     public void onMessage(Message message) {
