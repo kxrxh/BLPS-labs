@@ -17,6 +17,8 @@ import org.springframework.jms.support.converter.SimpleMessageConverter;
 import org.springframework.jms.support.destination.DestinationResolver;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 @Configuration
 @EnableJms
@@ -74,5 +76,17 @@ public class JmsConfig {
             }
         });
         return factory;
+    }
+
+    // Define a Task Executor bean for asynchronous processing
+    @Bean(name = "jmsMessageProcessorExecutor")
+    public TaskExecutor jmsMessageProcessorExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(5); // Adjust pool size as needed
+        executor.setMaxPoolSize(10);
+        executor.setQueueCapacity(25);
+        executor.setThreadNamePrefix("JmsMsgProc-");
+        executor.initialize();
+        return executor;
     }
 }

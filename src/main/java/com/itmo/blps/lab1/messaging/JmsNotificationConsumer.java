@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,8 @@ public class JmsNotificationConsumer implements MessageListener, InitializingBea
     private final ConnectionFactory connectionFactory;
     @Qualifier("jmsQueue")
     private final Queue destinationQueue;
+    @Qualifier("jmsMessageProcessorExecutor")
+    private final TaskExecutor taskExecutor;
 
     private Connection connection;
     private Session session;
@@ -64,10 +67,19 @@ public class JmsNotificationConsumer implements MessageListener, InitializingBea
 
             if (payload != null) {
                 log.info("Processing extracted payload: {}", payload);
-                processNotification(payload);
+                final String finalPayload = payload;
+                taskExecutor.execute(() -> {
+                    try {
+                        processNotification(finalPayload);
+                        log.debug("Async processing completed for payload starting with: {}", 
+                                finalPayload.substring(0, Math.min(finalPayload.length(), 50)));
+                    } catch (Exception e) {
+                        log.error("Error during asynchronous processing of JMS message payload starting with: {}", 
+                                finalPayload.substring(0, Math.min(finalPayload.length(), 50)), e);
+                    }
+                });
             } else {
-                log.warn("Could not extract processable payload from message of type: {}",
-                        message.getClass().getName());
+                log.warn("Could not extract processable payload from message of type: {}", message.getClass().getName());
             }
         } catch (JMSException e) {
             log.error("JMSException while processing received message from destination '{}'", getQueueNameSafe(), e);
