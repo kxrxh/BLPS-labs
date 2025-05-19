@@ -5,11 +5,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
+import com.itmo.blps.lab1.entities.User;
+import com.itmo.blps.lab1.repositories.UserRepository;
 import com.itmo.blps.lab1.security.UserAuthentication;
 import com.itmo.blps.lab1.services.core.PaymentService;
 
@@ -31,6 +34,8 @@ public class PaymentController {
 
     @Autowired
     private PaymentService paymentService;
+    @Autowired
+    private UserRepository userRepository;
 
     @GetMapping("/providers")
     @Operation(summary = "Get available payment providers", description = "Retrieves available payment providers from the database")
@@ -47,9 +52,11 @@ public class PaymentController {
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        Long userId = ((UserAuthentication) userDetails).getUserId();
+        String username = userDetails.getUsername();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Payment payment = paymentService.createAndProcessPayment(paymentDto, userId);
+        Payment payment = paymentService.createAndProcessPayment(paymentDto, user.getId());
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
