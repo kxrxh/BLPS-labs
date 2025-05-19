@@ -93,7 +93,7 @@ public class PromotionWorker {
         paymentDto.setAdvertisementId(advertisementId);
         paymentDto.setAmount(promotion.getPrice());
         try {
-            Payment payment = paymentService.createAndProcessPayment(paymentDto, userId);
+            Payment payment = paymentService.createAndProcessPayment(paymentDto, userId, false);
             if (payment != null) {
                 externalTaskService.complete(externalTask, Map.of("payment_id", payment.getId()));
             } else {

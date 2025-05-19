@@ -13,7 +13,6 @@ import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
 import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.repositories.UserRepository;
-import com.itmo.blps.lab1.security.UserAuthentication;
 import com.itmo.blps.lab1.services.core.PaymentService;
 
 import io.swagger.v3.oas.annotations.Operation;

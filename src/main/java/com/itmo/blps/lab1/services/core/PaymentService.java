@@ -84,6 +84,10 @@ public class PaymentService {
     }
 
     public Payment createAndProcessPayment(PaymentDto paymentDto, Long userId) {
+        return createAndProcessPayment(paymentDto, userId, true);
+    }
+
+    public Payment createAndProcessPayment(PaymentDto paymentDto, Long userId, Boolean sendNotification) {
         // Create a new transaction definition with custom settings
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setName("PaymentCreationAndProcessingTransaction");
@@ -100,14 +104,18 @@ public class PaymentService {
                 notificationPayload = processPayment(payment);
                 log.info("Notification payload: {}", notificationPayload);
                 if (notificationPayload != null) {
-                    String finalPayload = notificationPayload; // Need effectively final variable for lambda
-                    TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                        @Override
-                        public void afterCommit() {
-                            stompProducer.sendNotification(finalPayload);
-                        }
-                    });
-                    log.info("Payment successfully processed. Promotion activated. Receipt notification queued.");
+                    if (sendNotification) {
+                        String finalPayload = notificationPayload; // Need effectively final variable for lambda
+                        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                            @Override
+                            public void afterCommit() {
+                                stompProducer.sendNotification(finalPayload);
+                            }
+                        });
+                        log.info("Payment successfully processed. Promotion activated. Receipt notification queued.");
+                    } else {
+                        log.info("Payment successfully processed. Promotion activated. Notification skipped as per request.");
+                    }
                     return payment;
                 } else {
                     throw new RuntimeException("Something went wrong during payment processing.");
