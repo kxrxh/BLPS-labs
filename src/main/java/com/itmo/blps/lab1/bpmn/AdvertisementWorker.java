@@ -46,7 +46,7 @@ public class AdvertisementWorker {
             String title = externalTask.getVariable("Adv_Title");
             String description = externalTask.getVariable("Adv_Desc");
             Long priceLong = externalTask.getVariable("Adv_Price");
-            Double price = priceLong != null ? priceLong.doubleValue() : null;
+            Double price = priceLong.doubleValue();
             String address = externalTask.getVariable("Adv_Address");
             String city = externalTask.getVariable("Adv_City");
             String realEstateTypeStr = externalTask.getVariable("Adv_Type");
@@ -102,7 +102,7 @@ public class AdvertisementWorker {
             externalTaskService.complete(externalTask);
         } catch (Exception e) {
             log.error("Error validating advertisement", e);
-            externalTaskService.handleBpmnError(externalTask, "VALIDATION_ERROR", e.getMessage());
+            externalTaskService.handleBpmnError(externalTask, "400", e.getMessage());
         }
     }
 }

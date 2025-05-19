@@ -36,7 +36,7 @@ public class AuthWorker {
         try {
             String token = externalTask.getVariable("token");
             log.info("Received token: {}", token);
-            if (token == null || !token.startsWith("Bearer ")) {
+            if (token == null) {
                 log.warn("Invalid or missing Bearer token.");
                 Map<String, Object> variables = new HashMap<>();
                 variables.put("isAuthenticated", false);
@@ -45,9 +45,11 @@ public class AuthWorker {
                 return;
             }
 
-            String jwt = token.substring(7); // Remove "Bearer " prefix
-            log.info("Extracted JWT: {}", jwt);
-            String username = jwtService.getUsernameFromToken(jwt);
+            if (token.startsWith("Bearer ")) {
+                token = token.substring(7);
+            }
+            log.info("Extracted JWT: {}", token);
+            String username = jwtService.getUsernameFromToken(token);
             log.info("Extracted username from token: {}", username);
 
             if (username == null) {
@@ -61,7 +63,7 @@ public class AuthWorker {
 
             var userOpt = userService.getUserByUsername(username);
             log.info("User lookup result for username {}: {}", username, userOpt.isPresent() ? "Found" : "Not found");
-            if (userOpt.isEmpty() || !jwtService.isTokenValid(jwt, userOpt.get())) {
+            if (userOpt.isEmpty() || !jwtService.isTokenValid(token, userOpt.get())) {
                 log.warn("User not found or token is invalid for user {}.", username);
                 Map<String, Object> variables = new HashMap<>();
                 variables.put("isAuthenticated", false);

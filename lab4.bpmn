@@ -349,7 +349,7 @@
     <bpmn:userTask id="Activity_0ru07i7" name="Подтверждение продвижения">
       <bpmn:extensionElements>
         <camunda:formData>
-          <camunda:formField id="Adv_Approve" label="Approve" type="boolean" />
+          <camunda:formField id="Adv_Approve" label="Подлючить продвижение?" type="boolean" />
         </camunda:formData>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_0yfkcq7</bpmn:incoming>

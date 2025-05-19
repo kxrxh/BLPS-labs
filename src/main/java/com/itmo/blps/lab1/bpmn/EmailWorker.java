@@ -1,7 +1,5 @@
 package com.itmo.blps.lab1.bpmn;
 
-import java.util.Map;
-
 import org.camunda.bpm.client.ExternalTaskClient;
 import org.camunda.bpm.client.task.ExternalTask;
 import org.camunda.bpm.client.task.ExternalTaskService;
