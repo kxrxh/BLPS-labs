@@ -27,6 +27,9 @@ public class AdvertisementWorker {
     @Autowired
     private AdvertisementService advertisementService;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @PostConstruct
     public void subscribe() {
         externalTaskClient.subscribe("adv-create")
@@ -42,10 +45,11 @@ public class AdvertisementWorker {
         try {
             String title = externalTask.getVariable("Adv_Title");
             String description = externalTask.getVariable("Adv_Desc");
-            Double price = externalTask.getVariable("Adv_Price");
+            Long priceLong = externalTask.getVariable("Adv_Price");
+            Double price = priceLong != null ? priceLong.doubleValue() : null;
             String address = externalTask.getVariable("Adv_Address");
             String city = externalTask.getVariable("Adv_City");
-            String realEstateTypeStr = externalTask.getVariable("realEstateType");
+            String realEstateTypeStr = externalTask.getVariable("Adv_Type");
             Long userId = externalTask.getVariable("userId");
 
             AdDto adDto = new AdDto();
@@ -59,7 +63,7 @@ public class AdvertisementWorker {
             AdvertisementResponseDto response = advertisementService.createAdvertisement(adDto, userId);
 
             externalTaskService.complete(externalTask,
-                    Map.of("advertisement", new ObjectMapper().writeValueAsString(response)),
+                    Map.of("advertisement", objectMapper.writeValueAsString(response)),
                     Map.of("adv_id", response.getId()));
         } catch (Exception e) {
             log.error("Error creating advertisement", e);
@@ -71,10 +75,11 @@ public class AdvertisementWorker {
         try {
             String title = externalTask.getVariable("Adv_Title");
             String description = externalTask.getVariable("Adv_Desc");
-            Double price = externalTask.getVariable("Adv_Price");
+            Long priceLong = externalTask.getVariable("Adv_Price");
+            Double price = priceLong != null ? priceLong.doubleValue() : null;
             String address = externalTask.getVariable("Adv_Address");
             String city = externalTask.getVariable("Adv_City");
-            String realEstateTypeStr = externalTask.getVariable("realEstateType");
+            String realEstateTypeStr = externalTask.getVariable("Adv_Type");
             Long userId = externalTask.getVariable("userId");
 
             if (title == null || description == null || price == null || address == null ||
@@ -97,11 +102,7 @@ public class AdvertisementWorker {
             externalTaskService.complete(externalTask);
         } catch (Exception e) {
             log.error("Error validating advertisement", e);
-            Map<String, Object> variables = Map.of(
-                    "isValid", false,
-                    "status", "Try again later.",
-                    "code", "500");
-            externalTaskService.complete(externalTask, variables);
+            externalTaskService.handleBpmnError(externalTask, "VALIDATION_ERROR", e.getMessage());
         }
     }
 }

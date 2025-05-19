@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Component
@@ -27,60 +28,59 @@ public class AuthWorker {
     @PostConstruct
     public void subscribe() {
         externalTaskClient.subscribe("check-auth")
-            .handler(this::handleAuthValidation)
-            .open();
+                .handler(this::handleAuthValidation)
+                .open();
     }
 
     private void handleAuthValidation(ExternalTask externalTask, ExternalTaskService externalTaskService) {
         try {
             String token = externalTask.getVariable("token");
+            log.info("Received token: {}", token);
             if (token == null || !token.startsWith("Bearer ")) {
-                externalTaskService.complete(externalTask, 
-                    Map.of(
-                        "isAuthenticated", false,
-                        "userId", null
-                    )
-                );
+                log.warn("Invalid or missing Bearer token.");
+                Map<String, Object> variables = new HashMap<>();
+                variables.put("isAuthenticated", false);
+                variables.put("userId", null);
+                externalTaskService.complete(externalTask, variables);
                 return;
             }
 
             String jwt = token.substring(7); // Remove "Bearer " prefix
+            log.info("Extracted JWT: {}", jwt);
             String username = jwtService.getUsernameFromToken(jwt);
+            log.info("Extracted username from token: {}", username);
 
             if (username == null) {
-                externalTaskService.complete(externalTask,
-                    Map.of(
-                        "isAuthenticated", false,
-                        "userId", null
-                    )
-                );
+                log.warn("Username extracted from token is null.");
+                Map<String, Object> variables = new HashMap<>();
+                variables.put("isAuthenticated", false);
+                variables.put("userId", null);
+                externalTaskService.complete(externalTask, variables);
                 return;
             }
 
             var userOpt = userService.getUserByUsername(username);
+            log.info("User lookup result for username {}: {}", username, userOpt.isPresent() ? "Found" : "Not found");
             if (userOpt.isEmpty() || !jwtService.isTokenValid(jwt, userOpt.get())) {
-                externalTaskService.complete(externalTask,
-                    Map.of(
-                        "isAuthenticated", false,
-                        "userId", null
-                    )
-                );
+                log.warn("User not found or token is invalid for user {}.", username);
+                Map<String, Object> variables = new HashMap<>();
+                variables.put("isAuthenticated", false);
+                variables.put("userId", null);
+                externalTaskService.complete(externalTask, variables);
                 return;
             }
 
             User user = userOpt.get();
+            log.info("Authentication successful for user: {}", user.getUsername());
             externalTaskService.complete(externalTask,
-                Map.of(
-                    "isAuthenticated", true,
-                    "userId", user.getId()
-                )
-            );
+                    Map.of(
+                            "isAuthenticated", true,
+                            "userId", user.getId()));
 
         } catch (Exception e) {
             log.error("Error processing auth validation task", e);
             externalTaskService.handleBpmnError(externalTask, "AUTH_ERROR", "Authentication processing failed");
         }
     }
-    
-}
 
+}
