@@ -8,7 +8,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.PaymentDto;
+import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
+import com.itmo.blps.lab1.security.UserAuthentication;
 import com.itmo.blps.lab1.services.core.PaymentService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -45,11 +47,13 @@ public class PaymentController {
     public ResponseEntity<Map<String, Object>> processPayment(@RequestBody @Valid PaymentDto paymentDto,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        String paymentInfo = paymentService.createAndProcessPayment(paymentDto, userDetails);
+        Long userId = ((UserAuthentication) userDetails).getUserId();
+
+        Payment payment = paymentService.createAndProcessPayment(paymentDto, userId);
 
         Map<String, Object> response = new HashMap<>();
         response.put("status", "success");
-        response.put("payment_info", paymentInfo);
+        response.put("payment_id", payment.getId());
 
         return ResponseEntity.ok(response);
     }

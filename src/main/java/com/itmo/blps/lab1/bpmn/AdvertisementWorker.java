@@ -58,9 +58,12 @@ public class AdvertisementWorker {
 
             AdvertisementResponseDto response = advertisementService.createAdvertisement(adDto, userId);
 
-            externalTaskService.complete(externalTask, Map.of("advertisement", new ObjectMapper().writeValueAsString(response)), Map.of("adv_id", response.getId()));
+            externalTaskService.complete(externalTask,
+                    Map.of("advertisement", new ObjectMapper().writeValueAsString(response)),
+                    Map.of("adv_id", response.getId()));
         } catch (Exception e) {
             log.error("Error creating advertisement", e);
+            externalTaskService.handleBpmnError(externalTask, "CREATE_ERROR", e.getMessage());
         }
     }
 

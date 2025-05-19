@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.TransactionDefinition;
@@ -19,6 +18,7 @@ import com.itmo.blps.lab1.dto.PaymentDto;
 import com.itmo.blps.lab1.entities.Advertisement;
 import com.itmo.blps.lab1.repositories.PaymentRepository;
 import com.itmo.blps.lab1.repositories.PromotionRepository;
+import com.itmo.blps.lab1.repositories.UserRepository;
 import com.itmo.blps.lab1.entities.User;
 import com.itmo.blps.lab1.exception.BadRequestException;
 
@@ -29,6 +29,7 @@ import com.itmo.blps.lab1.repositories.PaymentProviderRepository;
 import com.itmo.blps.lab1.repositories.AdvertisementRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.time.LocalDateTime;
 
 import org.springframework.web.client.HttpClientErrorException;
@@ -64,6 +65,9 @@ public class PaymentService {
     @Autowired
     private StompNotificationProducer stompProducer;
 
+    @Autowired
+    private UserRepository userRepository;
+
     // Use @Lazy to prevent circular dependency issues on startup
     @Lazy
     @Autowired
@@ -79,7 +83,7 @@ public class PaymentService {
         paymentRepository.save(payment);
     }
 
-    public String createAndProcessPayment(PaymentDto paymentDto, UserDetails userDetails) {
+    public Payment createAndProcessPayment(PaymentDto paymentDto, Long userId) {
         // Create a new transaction definition with custom settings
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setName("PaymentCreationAndProcessingTransaction");
@@ -91,7 +95,7 @@ public class PaymentService {
         return transactionTemplate.execute(status -> { // Return the result directly
             String notificationPayload = null;
             try {
-                Payment payment = createPayment(paymentDto, userDetails);
+                Payment payment = createPayment(paymentDto, userId);
                 // processPayment now returns the payload or null
                 notificationPayload = processPayment(payment);
                 log.info("Notification payload: {}", notificationPayload);
@@ -104,21 +108,20 @@ public class PaymentService {
                         }
                     });
                     log.info("Payment successfully processed. Promotion activated. Receipt notification queued.");
-                    return "Payment successfully processed. Promotion activated. Receipt notification queued.";
+                    return payment;
                 } else {
                     throw new RuntimeException("Something went wrong during payment processing.");
                 }
-
             } catch (Exception e) {
                 // Mark transaction for rollback
                 status.setRollbackOnly();
                 log.error("Payment creation and processing failed: {}", e.getMessage(), e);
-                return "Payment creation and processing failed: " + e.getMessage(); // Return error message
+                return null; // Return error message
             }
         });
     }
 
-    public Payment createPayment(PaymentDto paymentDto, UserDetails userDetails) {
+    public Payment createPayment(PaymentDto paymentDto, Long userId) {
         Payment payment = new Payment();
 
         payment.setProvider(providerRepository.findById(paymentDto.getProviderId())
@@ -136,8 +139,10 @@ public class PaymentService {
         }
 
         // Verify ownership or admin role
-        boolean isAdmin = userDetails.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"));
-        boolean isOwner = advertisement.getAuthor().getUsername().equals(userDetails.getUsername());
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found: " + userId));
+        boolean isAdmin = user.getAuthorities().contains(new SimpleGrantedAuthority("ADMIN"));
+        boolean isOwner = advertisement.getAuthor().getUsername().equals(user.getUsername());
         if (!isOwner && !isAdmin) {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED,
                     "User does not own the advertisement for this promotion and is not an admin.");
@@ -163,7 +168,7 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PENDING);
 
         // Set the current authenticated user as the payer
-        payment.setPayer((User) userDetails);
+        payment.setPayer(user);
 
         return paymentRepository.save(payment);
     }
@@ -214,14 +219,10 @@ public class PaymentService {
 
                 return notificationPayload; // Return payload for sending after commit
             } else {
-                log.info("Payment processing finished (potentially failed or missing data for notification).");
-                log.info("Payment: {}", payment);
-                log.info("Advertisement: {}", payment.getAdvertisement());
                 return null; // No notification to send
             }
         } else {
             // 3b. If failed, set payment status to failed
-            log.warn("Payment failed: {}", payment);
             setPaymentStatus(payment, PaymentStatus.FAILED);
             return null; // No notification to send on failure
         }
@@ -266,5 +267,9 @@ public class PaymentService {
                 throw new RuntimeException("Payment status update failed: " + e.getMessage(), e);
             }
         });
+    }
+
+    public Optional<Payment> getPaymentById(Long paymentId) {
+        return paymentRepository.findById(paymentId);
     }
 }
