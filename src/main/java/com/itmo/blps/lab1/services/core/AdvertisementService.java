@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
-import com.itmo.blps.lab1.security.UserAuthentication;
-
 @Service
 public class AdvertisementService {
     private final AdvertisementRepository advertisementRepository;
@@ -52,14 +48,9 @@ public class AdvertisementService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    public AdvertisementResponseDto createAdvertisement(AdDto adDto) {
+    public AdvertisementResponseDto createAdvertisement(AdDto adDto, Long userId) {
         return transactionTemplate.execute(status -> {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (!(authentication instanceof UserAuthentication)) {
-                throw new IllegalStateException("User not properly authenticated.");
-            }
-            Long currentUserId = ((UserAuthentication) authentication).getUserId();
-            User currentUser = userService.getUserById(currentUserId);
+            User currentUser = userService.getUserById(userId);
 
             Advertisement advertisement = Advertisement.builder()
                     .name(adDto.getTitle())

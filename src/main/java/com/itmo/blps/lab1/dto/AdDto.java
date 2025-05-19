@@ -36,4 +36,36 @@ public class AdDto {
     @NotNull(message = "Real estate type is required")
     @JsonDeserialize(using = RealEstateTypeDeserializer.class)
     private RealEstateType realEstateType;
+
+    public boolean isValid() {
+        if (title == null || description == null || price <= 0 || address == null || city == null || realEstateType == null) {
+            return false;
+        }
+        if (title.length() < 1 || title.length() > 100) {
+            return false;
+        }
+
+        if (description.length() < 10 || description.length() > 1000) {
+            return false;
+        }
+
+        if (price < 0) {
+            return false;
+        }
+
+        if (address.length() < 1 || address.length() > 100) {
+            return false;
+        }
+
+        if (city.length() < 1 || city.length() > 100) {
+            return false;
+        }
+
+        if (realEstateType == null) {
+            return false;
+        }
+
+        return true;
+    }
+
 }
