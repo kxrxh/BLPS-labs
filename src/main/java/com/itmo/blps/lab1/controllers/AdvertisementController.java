@@ -3,11 +3,14 @@ package com.itmo.blps.lab1.controllers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.itmo.blps.lab1.dto.AdDto;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.dto.error.ErrorResponse;
+import com.itmo.blps.lab1.security.UserAuthentication;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +36,12 @@ public class AdvertisementController {
     @ApiResponse(responseCode = "200", description = "Advertisement created successfully")
     @PreAuthorize("hasAuthority('advertisement:create')")
     public AdvertisementResponseDto createAdvertisement(@RequestBody @Valid AdDto adDto) {
-        return advertisementService.createAdvertisement(adDto);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof UserAuthentication)) {
+            throw new IllegalStateException("User not properly authenticated.");
+        }
+        Long userId = ((UserAuthentication) authentication).getUserId();
+        return advertisementService.createAdvertisement(adDto, userId);
     }
 
     @GetMapping("/{id}")
