@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.35.0">
   <bpmn:collaboration id="Collaboration_1nqpqk1">
-    <bpmn:participant id="Participant_0lmxcl9" name="Публикация объявления" processRef="Process_1x5ya4b" />
-    <bpmn:participant id="Participant_1snzqc9" name="Запланированная проверка истечения продвижения" processRef="Process_0whlblc" />
     <bpmn:participant id="Participant_1uglaw2" name="Запланированная проверка скорого истечения продвижения" processRef="Process_00apgjo" />
+    <bpmn:participant id="Participant_1snzqc9" name="Запланированная проверка истечения продвижения" processRef="Process_0whlblc" />
+    <bpmn:participant id="Participant_0lmxcl9" name="Публикация объявления" processRef="Process_1x5ya4b" />
     <bpmn:textAnnotation id="TextAnnotation_1mqg8jm">
       <bpmn:text>400 BadRequest</bpmn:text>
     </bpmn:textAnnotation>
@@ -12,39 +12,340 @@
     </bpmn:textAnnotation>
     <bpmn:association id="Association_0ap1667" associationDirection="None" sourceRef="Event_1y9qax3" targetRef="TextAnnotation_1mqg8jm" />
   </bpmn:collaboration>
+  <bpmn:error id="Error_06oboto" name="BadRequest" errorCode="400" camunda:errorMessage="BadRequest" />
+  <bpmn:error id="Error_19w686v" name="InternalError" errorCode="500" camunda:errorMessage="Internal Error" />
+  <bpmn:error id="Error_1k43fdo" name="503Error" errorCode="503" camunda:errorMessage="Payment Service Error" />
+  <bpmn:error id="Error_0w7vlju" name="410Error" errorCode="410" camunda:errorMessage="Advertisement Deleted" />
+  <bpmn:process id="Process_00apgjo" name="Запланированная проверка скорого истечения продвижения" isExecutable="true" camunda:historyTimeToLive="P5D">
+    <bpmn:laneSet id="LaneSet_1r6lpbp">
+      <bpmn:lane id="Lane_1d5l506" name="Consumer">
+        <bpmn:flowNodeRef>Activity_0zfklg2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1425mgv</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_00ysdss</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_05ckniw</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0c97im2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_02srp35</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_1kisgfh" name="Producer">
+        <bpmn:flowNodeRef>Activity_1psk21s</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0mzf099</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1ptq8yz</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0wgsx43</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="Flow_0m9vl3j" sourceRef="Event_0wgsx43" targetRef="Event_1ptq8yz" />
+    <bpmn:sequenceFlow id="Flow_1skktla" sourceRef="Event_1ptq8yz" targetRef="Activity_0mzf099" />
+    <bpmn:sequenceFlow id="Flow_1bncog7" sourceRef="Activity_0mzf099" targetRef="Activity_1psk21s" />
+    <bpmn:sequenceFlow id="Flow_1dx9xvk" name="Нет" sourceRef="Gateway_0c97im2" targetRef="Event_00ysdss">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isPromoted}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_00433ax" sourceRef="Activity_02srp35" targetRef="Event_05ckniw" />
+    <bpmn:sequenceFlow id="Flow_0t81aoh" name="Есть" sourceRef="Gateway_0c97im2" targetRef="Activity_02srp35">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isPromoted}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0ktovms" sourceRef="Activity_1425mgv" targetRef="Gateway_0c97im2" />
+    <bpmn:sequenceFlow id="Flow_08jlwmz" sourceRef="Activity_0zfklg2" targetRef="Activity_1425mgv" />
+    <bpmn:sequenceFlow id="Flow_1t9ygwn" sourceRef="Activity_1psk21s" targetRef="Activity_0zfklg2" />
+    <bpmn:startEvent id="Event_0wgsx43" name="Запуск сервера">
+      <bpmn:outgoing>Flow_0m9vl3j</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="Event_1ptq8yz" name="1 минуты">
+      <bpmn:incoming>Flow_0m9vl3j</bpmn:incoming>
+      <bpmn:outgoing>Flow_1skktla</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_169ann9">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */1 * * * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Activity_0mzf099" name="Получение объявлений, продвижение которых скоро истечёт" camunda:type="external" camunda:topic="prom-find-expired">
+      <bpmn:incoming>Flow_1skktla</bpmn:incoming>
+      <bpmn:outgoing>Flow_1bncog7</bpmn:outgoing>
+      <bpmn:property id="Property_1ixgyb8" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_083ubad">
+        <bpmn:sourceRef>DataStoreReference_1duoslh</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1ixgyb8</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+    <bpmn:dataStoreReference id="DataStoreReference_1duoslh" name="База Данных" />
+    <bpmn:serviceTask id="Activity_1psk21s" name="Отправка в очередь" camunda:type="external" camunda:topic="prom-send-to-queue">
+      <bpmn:incoming>Flow_1bncog7</bpmn:incoming>
+      <bpmn:outgoing>Flow_1t9ygwn</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_0c97im2">
+      <bpmn:incoming>Flow_0ktovms</bpmn:incoming>
+      <bpmn:outgoing>Flow_0t81aoh</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1dx9xvk</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="Event_05ckniw" name="Сообщение отправлено">
+      <bpmn:incoming>Flow_00433ax</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_00ysdss" name="Сообщение не отправлено">
+      <bpmn:incoming>Flow_1dx9xvk</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:subProcess id="Activity_02srp35" name="Отправка сообщения на почту">
+      <bpmn:incoming>Flow_0t81aoh</bpmn:incoming>
+      <bpmn:outgoing>Flow_00433ax</bpmn:outgoing>
+      <bpmn:task id="Activity_09b5k3e" name="Генерация контента письма">
+        <bpmn:incoming>Flow_1dlj6tq</bpmn:incoming>
+        <bpmn:outgoing>Flow_1dkldms</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:task id="Activity_1f7fjhm" name="Получения почты пользователя">
+        <bpmn:incoming>Flow_02rwjt3</bpmn:incoming>
+        <bpmn:outgoing>Flow_1dlj6tq</bpmn:outgoing>
+        <bpmn:property id="Property_1515ean" name="__targetRef_placeholder" />
+        <bpmn:dataInputAssociation id="DataInputAssociation_04nsccq">
+          <bpmn:sourceRef>DataStoreReference_1rbd69l</bpmn:sourceRef>
+          <bpmn:targetRef>Property_1515ean</bpmn:targetRef>
+        </bpmn:dataInputAssociation>
+      </bpmn:task>
+      <bpmn:sequenceFlow id="Flow_1dlj6tq" sourceRef="Activity_1f7fjhm" targetRef="Activity_09b5k3e" />
+      <bpmn:endEvent id="Event_0a2v4j7" name="Письмо отправлено">
+        <bpmn:incoming>Flow_1dkldms</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_1dkldms" sourceRef="Activity_09b5k3e" targetRef="Event_0a2v4j7" />
+      <bpmn:dataStoreReference id="DataStoreReference_1rbd69l" name="База Данных" />
+      <bpmn:startEvent id="Event_03p2h76" name="Начало отправки письма">
+        <bpmn:outgoing>Flow_02rwjt3</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_02rwjt3" sourceRef="Event_03p2h76" targetRef="Activity_1f7fjhm" />
+    </bpmn:subProcess>
+    <bpmn:task id="Activity_1425mgv" name="Проверка наличия продвижения">
+      <bpmn:incoming>Flow_08jlwmz</bpmn:incoming>
+      <bpmn:outgoing>Flow_0ktovms</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_0zfklg2" name="Получение объявления по ID">
+      <bpmn:incoming>Flow_1t9ygwn</bpmn:incoming>
+      <bpmn:outgoing>Flow_08jlwmz</bpmn:outgoing>
+    </bpmn:task>
+  </bpmn:process>
+  <bpmn:process id="Process_0whlblc" name="Запланированная проверка истечения продвижения" isExecutable="true" camunda:historyTimeToLive="P5D">
+    <bpmn:laneSet id="LaneSet_006njkv">
+      <bpmn:lane id="Lane_0nq18jz" name="Consumer">
+        <bpmn:flowNodeRef>Gateway_13fl6js</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1keokua</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0zyyo4b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1hv1xeh</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_14bhgdc</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0hwep54</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0ecyiot</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_1iznz2e" name="Producer">
+        <bpmn:flowNodeRef>Activity_1h3tanm</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1471x2u</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1masl6b</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_11c0bam</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="Flow_0w3y0a4" sourceRef="Event_1masl6b" targetRef="Event_11c0bam" />
+    <bpmn:sequenceFlow id="Flow_15v88k2" sourceRef="Activity_0hwep54" targetRef="Activity_0ecyiot" />
+    <bpmn:sequenceFlow id="Flow_00fp2p8" sourceRef="Activity_1hv1xeh" targetRef="Activity_14bhgdc" />
+    <bpmn:sequenceFlow id="Flow_013di65" sourceRef="Activity_0ecyiot" targetRef="Event_0zyyo4b" />
+    <bpmn:sequenceFlow id="Flow_1klilqt" name="Есть" sourceRef="Gateway_13fl6js" targetRef="Activity_0hwep54">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isPromoted}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_0f8e02g" name="Нет" sourceRef="Gateway_13fl6js" targetRef="Event_1keokua">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isPromoted}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_03qxxah" sourceRef="Activity_14bhgdc" targetRef="Gateway_13fl6js" />
+    <bpmn:sequenceFlow id="Flow_0irnw1r" sourceRef="Activity_1471x2u" targetRef="Activity_1hv1xeh" />
+    <bpmn:sequenceFlow id="Flow_067hcfs" sourceRef="Activity_1h3tanm" targetRef="Activity_1471x2u" />
+    <bpmn:sequenceFlow id="Flow_06yvvzw" sourceRef="Event_11c0bam" targetRef="Activity_1h3tanm" />
+    <bpmn:intermediateCatchEvent id="Event_11c0bam" name="1 Минуты">
+      <bpmn:incoming>Flow_0w3y0a4</bpmn:incoming>
+      <bpmn:outgoing>Flow_06yvvzw</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_1p34nsb">
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */1 * * * ?</bpmn:timeCycle>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:startEvent id="Event_1masl6b" name="Запуск Сервера">
+      <bpmn:outgoing>Flow_0w3y0a4</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="Activity_0ecyiot" name="Отправка сообщения на почту">
+      <bpmn:incoming>Flow_15v88k2</bpmn:incoming>
+      <bpmn:outgoing>Flow_013di65</bpmn:outgoing>
+      <bpmn:startEvent id="Event_15zh9pw" name="Начало отправки письма">
+        <bpmn:outgoing>Flow_17v395o</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:sequenceFlow id="Flow_17v395o" sourceRef="Event_15zh9pw" targetRef="Activity_13q3rkf" />
+      <bpmn:sequenceFlow id="Flow_0ij72ym" sourceRef="Activity_13q3rkf" targetRef="Activity_1t2wvhp" />
+      <bpmn:sequenceFlow id="Flow_1cdrfgy" sourceRef="Activity_1t2wvhp" targetRef="Event_0vr9xmh" />
+      <bpmn:dataStoreReference id="DataStoreReference_1jfwkxl" name="База Данных" />
+      <bpmn:endEvent id="Event_0vr9xmh" name="Письмо отправлено">
+        <bpmn:incoming>Flow_1cdrfgy</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:task id="Activity_13q3rkf" name="Получения почты пользователя">
+        <bpmn:incoming>Flow_17v395o</bpmn:incoming>
+        <bpmn:outgoing>Flow_0ij72ym</bpmn:outgoing>
+        <bpmn:property id="Property_0nayt4s" name="__targetRef_placeholder" />
+        <bpmn:dataInputAssociation id="DataInputAssociation_09i90gt">
+          <bpmn:sourceRef>DataStoreReference_1jfwkxl</bpmn:sourceRef>
+          <bpmn:targetRef>Property_0nayt4s</bpmn:targetRef>
+        </bpmn:dataInputAssociation>
+      </bpmn:task>
+      <bpmn:task id="Activity_1t2wvhp" name="Генерация контента письма">
+        <bpmn:incoming>Flow_0ij72ym</bpmn:incoming>
+        <bpmn:outgoing>Flow_1cdrfgy</bpmn:outgoing>
+      </bpmn:task>
+    </bpmn:subProcess>
+    <bpmn:task id="Activity_0hwep54" name="Отключение продвижения">
+      <bpmn:incoming>Flow_1klilqt</bpmn:incoming>
+      <bpmn:outgoing>Flow_15v88k2</bpmn:outgoing>
+      <bpmn:dataOutputAssociation id="DataOutputAssociation_1inbppp">
+        <bpmn:targetRef>DataStoreReference_0iq1mzn</bpmn:targetRef>
+      </bpmn:dataOutputAssociation>
+    </bpmn:task>
+    <bpmn:task id="Activity_14bhgdc" name="Проверка наличия продвижения">
+      <bpmn:incoming>Flow_00fp2p8</bpmn:incoming>
+      <bpmn:outgoing>Flow_03qxxah</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Activity_1hv1xeh" name="Получение объявления по ID">
+      <bpmn:incoming>Flow_0irnw1r</bpmn:incoming>
+      <bpmn:outgoing>Flow_00fp2p8</bpmn:outgoing>
+      <bpmn:property id="Property_1h7w2kb" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_0119jon">
+        <bpmn:sourceRef>DataStoreReference_0naelyj</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1h7w2kb</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:task>
+    <bpmn:dataStoreReference id="DataStoreReference_0naelyj" name="База Данных" />
+    <bpmn:endEvent id="Event_0zyyo4b" name="Сообщение отправлено">
+      <bpmn:incoming>Flow_013di65</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Event_1keokua" name="Сообщение не отправлено">
+      <bpmn:incoming>Flow_0f8e02g</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:dataStoreReference id="DataStoreReference_0iq1mzn" name="База Данных" />
+    <bpmn:exclusiveGateway id="Gateway_13fl6js">
+      <bpmn:incoming>Flow_03qxxah</bpmn:incoming>
+      <bpmn:outgoing>Flow_0f8e02g</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1klilqt</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Activity_1471x2u" name="Отправка в очередь" camunda:type="external" camunda:topic="prom-send-to-queue">
+      <bpmn:incoming>Flow_067hcfs</bpmn:incoming>
+      <bpmn:outgoing>Flow_0irnw1r</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:dataStoreReference id="DataStoreReference_1uywd3i" name="База Данных" />
+    <bpmn:serviceTask id="Activity_1h3tanm" name="Получение объявлений с истекшим временем продвижения" camunda:type="external" camunda:topic="prom-find-expired">
+      <bpmn:incoming>Flow_06yvvzw</bpmn:incoming>
+      <bpmn:outgoing>Flow_067hcfs</bpmn:outgoing>
+      <bpmn:property id="Property_1qyuxsr" name="__targetRef_placeholder" />
+      <bpmn:dataInputAssociation id="DataInputAssociation_1g2vg07">
+        <bpmn:sourceRef>DataStoreReference_1uywd3i</bpmn:sourceRef>
+        <bpmn:targetRef>Property_1qyuxsr</bpmn:targetRef>
+      </bpmn:dataInputAssociation>
+    </bpmn:serviceTask>
+  </bpmn:process>
   <bpmn:process id="Process_1x5ya4b" name="Публикация объявления" isExecutable="true" camunda:historyTimeToLive="P5D">
     <bpmn:laneSet id="LaneSet_0n81d43">
+      <bpmn:lane id="Lane_1yxt68p" name="Сервер">
+        <bpmn:flowNodeRef>Activity_0mwda64</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_00ub9ju</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_1tjkkkh</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0pcdci2</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_011zhd7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_1y9qax3</bpmn:flowNodeRef>
+      </bpmn:lane>
       <bpmn:lane id="Lane_09ygb0e" name="Клиент">
         <bpmn:flowNodeRef>Event_0a1gdam</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_1oy02a6</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0ru07i7</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_0cpq8v0</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0lc624t</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Event_11affi5</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_0oke3q9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0grea0y</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Event_0lc624t</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0npoc0d</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_0ca4xzq</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0grea0y</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_1quv63e</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Activity_0ru07i7</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0cpq8v0</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_0oke3q9</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_1oy02a6</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>Activity_1ykd20b</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_1yxt68p" name="Сервер">
-        <bpmn:flowNodeRef>Activity_1tjkkkh</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_00ub9ju</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0mwda64</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_011zhd7</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0pcdci2</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_1y9qax3</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
     <bpmn:startEvent id="Event_0a1gdam" name="Зайти на сайт">
       <bpmn:outgoing>Flow_0yo24kc</bpmn:outgoing>
     </bpmn:startEvent>
-    <bpmn:exclusiveGateway id="Gateway_1oy02a6">
-      <bpmn:incoming>Flow_12187l8</bpmn:incoming>
-      <bpmn:outgoing>Flow_0jxxcjg</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1cbtya1</bpmn:outgoing>
+    <bpmn:sequenceFlow id="Flow_0yo24kc" sourceRef="Event_0a1gdam" targetRef="Activity_0grea0y" />
+    <bpmn:endEvent id="Event_11affi5" name="Пользователь не имеет доступа">
+      <bpmn:incoming>Flow_0va4dfk</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Activity_0grea0y" name="Авторизация">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="token" label="token" type="string">
+            <camunda:validation />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_0yo24kc</bpmn:incoming>
+      <bpmn:outgoing>Flow_0dmsaws</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_0dmsaws" sourceRef="Activity_0grea0y" targetRef="Activity_0mwda64" />
+    <bpmn:endEvent id="Event_0lc624t" name="Объявление создано">
+      <bpmn:incoming>Flow_1jt8ewo</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:serviceTask id="Activity_0mwda64" name="Проверка авторизации" camunda:type="external" camunda:topic="check-auth">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_0dmsaws</bpmn:incoming>
+      <bpmn:outgoing>Flow_03kxutk</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_03kxutk" sourceRef="Activity_0mwda64" targetRef="Gateway_00ub9ju" />
+    <bpmn:exclusiveGateway id="Gateway_00ub9ju" name="Авторизован?">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_03kxutk</bpmn:incoming>
+      <bpmn:outgoing>Flow_0va4dfk</bpmn:outgoing>
+      <bpmn:outgoing>Flow_07rilka</bpmn:outgoing>
     </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0va4dfk" name="Нет" sourceRef="Gateway_00ub9ju" targetRef="Event_11affi5">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isAuthenticated}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:userTask id="Activity_0npoc0d" name="Выбрать тип недвижимости">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="Adv_Type" label="Advertisement Type" type="enum">
+            <camunda:validation />
+            <camunda:value id="APARTMENT" name="APARTMENT" />
+            <camunda:value id="HOUSE" name="HOUSE" />
+            <camunda:value id="LAND" name="LAND" />
+            <camunda:value id="COMMERCIAL" name="COMMERCIAL" />
+            <camunda:value id="GARAGE" name="GARAGE" />
+            <camunda:value id="STORAGE" name="STORAGE" />
+            <camunda:value id="OTHER" name="OTHER" />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_07rilka</bpmn:incoming>
+      <bpmn:outgoing>Flow_13ekx2y</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_13ekx2y" sourceRef="Activity_0npoc0d" targetRef="Activity_0ca4xzq" />
+    <bpmn:userTask id="Activity_0ca4xzq" name="Заполнение карточки объявления">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="Adv_Title" label="Title" type="string" />
+          <camunda:formField id="Adv_Desc" label="Description" type="string" />
+          <camunda:formField id="Adv_Price" label="Price" type="long" />
+          <camunda:formField id="Adv_Address" label="Address" type="string" />
+          <camunda:formField id="Adv_City" label="City" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_13ekx2y</bpmn:incoming>
+      <bpmn:incoming>Flow_0uxsvkp</bpmn:incoming>
+      <bpmn:outgoing>Flow_0e0f7yz</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_07rilka" name="Да" sourceRef="Gateway_00ub9ju" targetRef="Activity_0npoc0d">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isAuthenticated}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:userTask id="Activity_1quv63e" name="Просмотр объявления">
+      <bpmn:extensionElements>
+        <camunda:formData>
+          <camunda:formField id="advertisement" label="Advertisement" type="string">
+            <camunda:properties />
+            <camunda:validation />
+          </camunda:formField>
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_06djk5l</bpmn:incoming>
+      <bpmn:outgoing>Flow_0yfkcq7</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="Flow_0yfkcq7" sourceRef="Activity_1quv63e" targetRef="Activity_0ru07i7" />
+    <bpmn:dataStoreReference id="DataStoreReference_15qf47g" name="База Данных" />
     <bpmn:userTask id="Activity_0ru07i7" name="Подтверждение продвижения">
       <bpmn:extensionElements>
         <camunda:formData>
@@ -54,28 +355,56 @@
       <bpmn:incoming>Flow_0yfkcq7</bpmn:incoming>
       <bpmn:outgoing>Flow_12187l8</bpmn:outgoing>
     </bpmn:userTask>
-    <bpmn:dataStoreReference id="DataStoreReference_15qf47g" name="База Данных" />
+    <bpmn:sequenceFlow id="Flow_12187l8" sourceRef="Activity_0ru07i7" targetRef="Gateway_1oy02a6" />
+    <bpmn:inclusiveGateway id="Gateway_0cpq8v0">
+      <bpmn:incoming>Flow_1usqade</bpmn:incoming>
+      <bpmn:incoming>Flow_1xb2v5f</bpmn:incoming>
+      <bpmn:outgoing>Flow_0uxsvkp</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0uxsvkp" sourceRef="Gateway_0cpq8v0" targetRef="Activity_0ca4xzq" />
+    <bpmn:inclusiveGateway id="Gateway_0oke3q9">
+      <bpmn:incoming>Flow_0jxxcjg</bpmn:incoming>
+      <bpmn:incoming>Flow_171xeck</bpmn:incoming>
+      <bpmn:outgoing>Flow_1jt8ewo</bpmn:outgoing>
+    </bpmn:inclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_1jt8ewo" sourceRef="Gateway_0oke3q9" targetRef="Event_0lc624t" />
+    <bpmn:exclusiveGateway id="Gateway_1oy02a6">
+      <bpmn:incoming>Flow_12187l8</bpmn:incoming>
+      <bpmn:outgoing>Flow_0jxxcjg</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1cbtya1</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:sequenceFlow id="Flow_0jxxcjg" name="Нет" sourceRef="Gateway_1oy02a6" targetRef="Gateway_0oke3q9">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!Adv_Approve}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_1cbtya1" name="Да" sourceRef="Gateway_1oy02a6" targetRef="Activity_1ykd20b">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${Adv_Approve}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:serviceTask id="Activity_1tjkkkh" name="Создание объявления" camunda:type="external" camunda:topic="adv-create">
-      <bpmn:extensionElements>
-        <camunda:errorEventDefinition id="ErrorEventDefinition_1um3q92" errorRef="Error_19w686v" />
-      </bpmn:extensionElements>
+      <bpmn:extensionElements />
       <bpmn:incoming>Flow_0gu5z8d</bpmn:incoming>
       <bpmn:outgoing>Flow_06djk5l</bpmn:outgoing>
       <bpmn:dataOutputAssociation id="DataOutputAssociation_1ovt0o6">
         <bpmn:targetRef>DataStoreReference_15qf47g</bpmn:targetRef>
       </bpmn:dataOutputAssociation>
     </bpmn:serviceTask>
-    <bpmn:inclusiveGateway id="Gateway_0cpq8v0">
-      <bpmn:incoming>Flow_1xb2v5f</bpmn:incoming>
-      <bpmn:incoming>Flow_1usqade</bpmn:incoming>
-      <bpmn:outgoing>Flow_0uxsvkp</bpmn:outgoing>
-    </bpmn:inclusiveGateway>
-    <bpmn:endEvent id="Event_0lc624t" name="Объявление создано">
-      <bpmn:incoming>Flow_1jt8ewo</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:endEvent id="Event_11affi5" name="Пользователь не имеет доступа">
-      <bpmn:incoming>Flow_0va4dfk</bpmn:incoming>
-    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_06djk5l" sourceRef="Activity_1tjkkkh" targetRef="Activity_1quv63e" />
+    <bpmn:sequenceFlow id="Flow_0e0f7yz" sourceRef="Activity_0ca4xzq" targetRef="Activity_011zhd7" />
+    <bpmn:boundaryEvent id="Event_0pcdci2" attachedToRef="Activity_1tjkkkh">
+      <bpmn:outgoing>Flow_1usqade</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0vfku8y" errorRef="Error_19w686v" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_1usqade" sourceRef="Event_0pcdci2" targetRef="Gateway_0cpq8v0" />
+    <bpmn:serviceTask id="Activity_011zhd7" name="Валидация информации" camunda:type="external" camunda:topic="adv-form-validation">
+      <bpmn:extensionElements />
+      <bpmn:incoming>Flow_0e0f7yz</bpmn:incoming>
+      <bpmn:outgoing>Flow_0gu5z8d</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="Flow_0gu5z8d" sourceRef="Activity_011zhd7" targetRef="Activity_1tjkkkh" />
+    <bpmn:boundaryEvent id="Event_1y9qax3" attachedToRef="Activity_011zhd7">
+      <bpmn:outgoing>Flow_1xb2v5f</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="ErrorEventDefinition_0r5ys7i" errorRef="Error_06oboto" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="Flow_1xb2v5f" sourceRef="Event_1y9qax3" targetRef="Gateway_0cpq8v0" />
     <bpmn:subProcess id="Activity_1ykd20b" name="Конфигурация продвижения">
       <bpmn:incoming>Flow_1cbtya1</bpmn:incoming>
       <bpmn:outgoing>Flow_171xeck</bpmn:outgoing>
@@ -98,27 +427,30 @@
         <bpmn:incoming>Flow_0vjknpw</bpmn:incoming>
         <bpmn:outgoing>Flow_0tzu02a</bpmn:outgoing>
       </bpmn:userTask>
+      <bpmn:sequenceFlow id="Flow_0nduqhw" sourceRef="Event_19bshx3" targetRef="Activity_0pl02q8" />
       <bpmn:serviceTask id="Activity_0pl02q8" name="Загрузка доступных планов" camunda:type="external" camunda:topic="prom-get-plans">
         <bpmn:incoming>Flow_0nduqhw</bpmn:incoming>
         <bpmn:outgoing>Flow_0vjknpw</bpmn:outgoing>
-        <bpmn:property id="Property_1h5c036" name="__targetRef_placeholder" />
+        <bpmn:property id="Property_108btc1" name="__targetRef_placeholder" />
         <bpmn:dataInputAssociation id="DataInputAssociation_0p084fn">
           <bpmn:sourceRef>DataStoreReference_0cxcqjs</bpmn:sourceRef>
-          <bpmn:targetRef>Property_1h5c036</bpmn:targetRef>
+          <bpmn:targetRef>Property_108btc1</bpmn:targetRef>
         </bpmn:dataInputAssociation>
       </bpmn:serviceTask>
+      <bpmn:sequenceFlow id="Flow_0vjknpw" sourceRef="Activity_0pl02q8" targetRef="Activity_16pfuae" />
       <bpmn:dataStoreReference id="DataStoreReference_0cxcqjs" name="База Данных" />
       <bpmn:dataObjectReference id="DataObjectReference_0vp9da0" name="Service Discovery" dataObjectRef="DataObject_1h25a64" />
       <bpmn:dataObject id="DataObject_1h25a64" />
       <bpmn:serviceTask id="Activity_1stc18d" name="Поиск доступных провайдеров платежей" camunda:type="external" camunda:topic="prom-get-providers">
         <bpmn:incoming>Flow_0tzu02a</bpmn:incoming>
         <bpmn:outgoing>Flow_10czfw7</bpmn:outgoing>
-        <bpmn:property id="Property_1v79rmd" name="__targetRef_placeholder" />
+        <bpmn:property id="Property_04ualpb" name="__targetRef_placeholder" />
         <bpmn:dataInputAssociation id="DataInputAssociation_0fvkdum">
           <bpmn:sourceRef>DataObjectReference_0vp9da0</bpmn:sourceRef>
-          <bpmn:targetRef>Property_1v79rmd</bpmn:targetRef>
+          <bpmn:targetRef>Property_04ualpb</bpmn:targetRef>
         </bpmn:dataInputAssociation>
       </bpmn:serviceTask>
+      <bpmn:sequenceFlow id="Flow_0tzu02a" sourceRef="Activity_16pfuae" targetRef="Activity_1stc18d" />
       <bpmn:userTask id="Activity_07c7dml" name="Выбор провайдера платежа">
         <bpmn:extensionElements>
           <camunda:formData>
@@ -135,10 +467,13 @@
       </bpmn:userTask>
       <bpmn:inclusiveGateway id="Gateway_00njgur">
         <bpmn:incoming>Flow_10czfw7</bpmn:incoming>
-        <bpmn:incoming>Flow_1lv6fnj</bpmn:incoming>
         <bpmn:incoming>Flow_15gee7h</bpmn:incoming>
+        <bpmn:incoming>Flow_1lv6fnj</bpmn:incoming>
         <bpmn:outgoing>Flow_04ndi2n</bpmn:outgoing>
       </bpmn:inclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_04ndi2n" sourceRef="Gateway_00njgur" targetRef="Activity_07c7dml" />
+      <bpmn:sequenceFlow id="Flow_14l56cn" sourceRef="Activity_07c7dml" targetRef="Activity_0pz98i4" />
+      <bpmn:sequenceFlow id="Flow_10czfw7" sourceRef="Activity_1stc18d" targetRef="Gateway_00njgur" />
       <bpmn:userTask id="Activity_0pz98i4" name="Оплата продвижения">
         <bpmn:extensionElements>
           <camunda:formData>
@@ -148,11 +483,15 @@
         <bpmn:incoming>Flow_14l56cn</bpmn:incoming>
         <bpmn:outgoing>Flow_1bo1x5c</bpmn:outgoing>
       </bpmn:userTask>
+      <bpmn:sequenceFlow id="Flow_1bo1x5c" sourceRef="Activity_0pz98i4" targetRef="Gateway_0j7gujj" />
       <bpmn:exclusiveGateway id="Gateway_0j7gujj" name="Отказ от оплаты">
         <bpmn:incoming>Flow_1bo1x5c</bpmn:incoming>
         <bpmn:outgoing>Flow_15gee7h</bpmn:outgoing>
         <bpmn:outgoing>Flow_1bmzkkc</bpmn:outgoing>
       </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_15gee7h" name="Да" sourceRef="Gateway_0j7gujj" targetRef="Gateway_00njgur">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!pay}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
       <bpmn:userTask id="Activity_10vhv2o" name="Повторить оплату?">
         <bpmn:extensionElements>
           <camunda:formData>
@@ -162,122 +501,94 @@
         <bpmn:incoming>Flow_1bt95s1</bpmn:incoming>
         <bpmn:outgoing>Flow_0rpmnzn</bpmn:outgoing>
       </bpmn:userTask>
-      <bpmn:exclusiveGateway id="Gateway_1xc6ld4" name="Повтор?">
-        <bpmn:incoming>Flow_0rpmnzn</bpmn:incoming>
-        <bpmn:outgoing>Flow_1lv6fnj</bpmn:outgoing>
-        <bpmn:outgoing>Flow_10akbra</bpmn:outgoing>
-      </bpmn:exclusiveGateway>
       <bpmn:inclusiveGateway id="Gateway_12i0fqx">
         <bpmn:incoming>Flow_0bjgmbi</bpmn:incoming>
         <bpmn:incoming>Flow_17yd0i2</bpmn:incoming>
         <bpmn:outgoing>Flow_1bt95s1</bpmn:outgoing>
       </bpmn:inclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_1bt95s1" sourceRef="Gateway_12i0fqx" targetRef="Activity_10vhv2o" />
       <bpmn:dataStoreReference id="DataStoreReference_0y7vl9j" name="База Данных" />
       <bpmn:serviceTask id="Activity_11oab5m" name="Применение продвижения" camunda:type="external" camunda:topic="prom-apply">
-        <bpmn:extensionElements>
-          <camunda:errorEventDefinition id="ErrorEventDefinition_0be1qo7" errorRef="Error_1k43fdo" />
-          <camunda:errorEventDefinition id="ErrorEventDefinition_0q46jjg" errorRef="Error_0w7vlju" />
-        </bpmn:extensionElements>
+        <bpmn:extensionElements />
         <bpmn:incoming>Flow_1bmzkkc</bpmn:incoming>
         <bpmn:outgoing>Flow_05jaa54</bpmn:outgoing>
       </bpmn:serviceTask>
+      <bpmn:sequenceFlow id="Flow_1bmzkkc" name="нет" sourceRef="Gateway_0j7gujj" targetRef="Activity_11oab5m">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${pay}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:boundaryEvent id="Event_00v9eju" attachedToRef="Activity_11oab5m">
+        <bpmn:outgoing>Flow_0pbmba5</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorEventDefinition_1e6fxbo" errorRef="Error_1k43fdo" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
+      </bpmn:boundaryEvent>
+      <bpmn:sequenceFlow id="Flow_0pbmba5" sourceRef="Event_00v9eju" targetRef="Activity_1ktk4np" />
+      <bpmn:boundaryEvent id="Event_0c5sd6q" attachedToRef="Activity_11oab5m">
+        <bpmn:outgoing>Flow_1jv8ab3</bpmn:outgoing>
+        <bpmn:errorEventDefinition id="ErrorEventDefinition_0yc5tvh" errorRef="Error_0w7vlju" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
+      </bpmn:boundaryEvent>
       <bpmn:endEvent id="Event_0qkenvs" name="Отказ от продвижения">
         <bpmn:incoming>Flow_10akbra</bpmn:incoming>
       </bpmn:endEvent>
       <bpmn:endEvent id="Event_0oos2am" name="Продвижение подключено">
         <bpmn:incoming>Flow_0p3s14q</bpmn:incoming>
       </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Flow_05jaa54" sourceRef="Activity_11oab5m" targetRef="Activity_15kyw3j" />
       <bpmn:subProcess id="Activity_15kyw3j" name="Отправка чека на почту">
         <bpmn:incoming>Flow_05jaa54</bpmn:incoming>
         <bpmn:outgoing>Flow_0p3s14q</bpmn:outgoing>
-        <bpmn:startEvent id="Event_1lbqnjb">
-          <bpmn:outgoing>Flow_1e1rfnv</bpmn:outgoing>
-        </bpmn:startEvent>
-        <bpmn:dataStoreReference id="DataStoreReference_1f6tqn9" name="База Данных" />
-        <bpmn:subProcess id="Activity_1q3dly5" name="Отправка сообщения на почту">
-          <bpmn:incoming>Flow_00ykzpa</bpmn:incoming>
-          <bpmn:outgoing>Flow_1p65psg</bpmn:outgoing>
-          <bpmn:startEvent id="Event_1mi1bhk" name="Начало отправки письма">
-            <bpmn:outgoing>Flow_070phk0</bpmn:outgoing>
-          </bpmn:startEvent>
-          <bpmn:dataStoreReference id="DataStoreReference_10gps7s" name="База Данных" />
-          <bpmn:sequenceFlow id="Flow_070phk0" sourceRef="Event_1mi1bhk" targetRef="Activity_0kf2m20" />
-          <bpmn:sequenceFlow id="Flow_1ccdqc6" sourceRef="Activity_0kf2m20" targetRef="Activity_0ybo6sa" />
-          <bpmn:sequenceFlow id="Flow_0lqulnh" sourceRef="Activity_0ybo6sa" targetRef="Event_0u2yr9a" />
-          <bpmn:task id="Activity_0kf2m20" name="Получения почты пользователя">
-            <bpmn:incoming>Flow_070phk0</bpmn:incoming>
-            <bpmn:outgoing>Flow_1ccdqc6</bpmn:outgoing>
-            <bpmn:property id="Property_0432mdu" name="__targetRef_placeholder" />
-            <bpmn:dataInputAssociation id="DataInputAssociation_0c13mfg">
-              <bpmn:sourceRef>DataStoreReference_10gps7s</bpmn:sourceRef>
-              <bpmn:targetRef>Property_0432mdu</bpmn:targetRef>
-            </bpmn:dataInputAssociation>
-          </bpmn:task>
-          <bpmn:task id="Activity_0ybo6sa" name="Генерация контента письма">
-            <bpmn:incoming>Flow_1ccdqc6</bpmn:incoming>
-            <bpmn:outgoing>Flow_0lqulnh</bpmn:outgoing>
-          </bpmn:task>
-          <bpmn:endEvent id="Event_0u2yr9a" name="Письмо отправлено">
-            <bpmn:incoming>Flow_0lqulnh</bpmn:incoming>
-          </bpmn:endEvent>
-        </bpmn:subProcess>
-        <bpmn:endEvent id="Event_1bhbhgt">
-          <bpmn:incoming>Flow_1p65psg</bpmn:incoming>
-        </bpmn:endEvent>
-        <bpmn:sequenceFlow id="Flow_1e1rfnv" sourceRef="Event_1lbqnjb" targetRef="Activity_1b1928t" />
-        <bpmn:sequenceFlow id="Flow_0fds24a" sourceRef="Activity_1b1928t" targetRef="Activity_1jjqc0h" />
-        <bpmn:sequenceFlow id="Flow_00ykzpa" sourceRef="Activity_1jjqc0h" targetRef="Activity_1q3dly5" />
-        <bpmn:sequenceFlow id="Flow_1p65psg" sourceRef="Activity_1q3dly5" targetRef="Event_1bhbhgt" />
+        <bpmn:task id="Activity_1jjqc0h" name="Получение платежа и пользователя по ID">
+          <bpmn:incoming>Flow_0fds24a</bpmn:incoming>
+          <bpmn:outgoing>Flow_00ykzpa</bpmn:outgoing>
+          <bpmn:property id="Property_1qper9j" name="__targetRef_placeholder" />
+          <bpmn:dataInputAssociation id="DataInputAssociation_0tch0o9">
+            <bpmn:sourceRef>DataStoreReference_1f6tqn9</bpmn:sourceRef>
+            <bpmn:targetRef>Property_1qper9j</bpmn:targetRef>
+          </bpmn:dataInputAssociation>
+        </bpmn:task>
         <bpmn:serviceTask id="Activity_1b1928t" name="Отправка запроса в очередь" camunda:type="external" camunda:topic="email-send">
           <bpmn:extensionElements />
           <bpmn:incoming>Flow_1e1rfnv</bpmn:incoming>
           <bpmn:outgoing>Flow_0fds24a</bpmn:outgoing>
         </bpmn:serviceTask>
-        <bpmn:task id="Activity_1jjqc0h" name="Получение платежа и пользователя по ID">
-          <bpmn:incoming>Flow_0fds24a</bpmn:incoming>
-          <bpmn:outgoing>Flow_00ykzpa</bpmn:outgoing>
-          <bpmn:property id="Property_0dp6uu7" name="__targetRef_placeholder" />
-          <bpmn:dataInputAssociation id="DataInputAssociation_0tch0o9">
-            <bpmn:sourceRef>DataStoreReference_1f6tqn9</bpmn:sourceRef>
-            <bpmn:targetRef>Property_0dp6uu7</bpmn:targetRef>
-          </bpmn:dataInputAssociation>
-        </bpmn:task>
+        <bpmn:sequenceFlow id="Flow_0fds24a" sourceRef="Activity_1b1928t" targetRef="Activity_1jjqc0h" />
+        <bpmn:endEvent id="Event_1bhbhgt">
+          <bpmn:incoming>Flow_1p65psg</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="Flow_00ykzpa" sourceRef="Activity_1jjqc0h" targetRef="Activity_1q3dly5" />
+        <bpmn:subProcess id="Activity_1q3dly5" name="Отправка сообщения на почту">
+          <bpmn:incoming>Flow_00ykzpa</bpmn:incoming>
+          <bpmn:outgoing>Flow_1p65psg</bpmn:outgoing>
+          <bpmn:endEvent id="Event_0u2yr9a" name="Письмо отправлено">
+            <bpmn:incoming>Flow_0lqulnh</bpmn:incoming>
+          </bpmn:endEvent>
+          <bpmn:task id="Activity_0ybo6sa" name="Генерация контента письма">
+            <bpmn:incoming>Flow_1ccdqc6</bpmn:incoming>
+            <bpmn:outgoing>Flow_0lqulnh</bpmn:outgoing>
+          </bpmn:task>
+          <bpmn:sequenceFlow id="Flow_0lqulnh" sourceRef="Activity_0ybo6sa" targetRef="Event_0u2yr9a" />
+          <bpmn:task id="Activity_0kf2m20" name="Получения почты пользователя">
+            <bpmn:incoming>Flow_070phk0</bpmn:incoming>
+            <bpmn:outgoing>Flow_1ccdqc6</bpmn:outgoing>
+            <bpmn:property id="Property_0mct0cm" name="__targetRef_placeholder" />
+            <bpmn:dataInputAssociation id="DataInputAssociation_0c13mfg">
+              <bpmn:sourceRef>DataStoreReference_10gps7s</bpmn:sourceRef>
+              <bpmn:targetRef>Property_0mct0cm</bpmn:targetRef>
+            </bpmn:dataInputAssociation>
+          </bpmn:task>
+          <bpmn:sequenceFlow id="Flow_1ccdqc6" sourceRef="Activity_0kf2m20" targetRef="Activity_0ybo6sa" />
+          <bpmn:dataStoreReference id="DataStoreReference_10gps7s" name="База Данных" />
+          <bpmn:startEvent id="Event_1mi1bhk" name="Начало отправки письма">
+            <bpmn:outgoing>Flow_070phk0</bpmn:outgoing>
+          </bpmn:startEvent>
+          <bpmn:sequenceFlow id="Flow_070phk0" sourceRef="Event_1mi1bhk" targetRef="Activity_0kf2m20" />
+        </bpmn:subProcess>
+        <bpmn:sequenceFlow id="Flow_1p65psg" sourceRef="Activity_1q3dly5" targetRef="Event_1bhbhgt" />
+        <bpmn:dataStoreReference id="DataStoreReference_1f6tqn9" name="База Данных" />
+        <bpmn:startEvent id="Event_1lbqnjb">
+          <bpmn:outgoing>Flow_1e1rfnv</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:sequenceFlow id="Flow_1e1rfnv" sourceRef="Event_1lbqnjb" targetRef="Activity_1b1928t" />
       </bpmn:subProcess>
-      <bpmn:boundaryEvent id="Event_00v9eju" attachedToRef="Activity_11oab5m">
-        <bpmn:outgoing>Flow_0pbmba5</bpmn:outgoing>
-        <bpmn:errorEventDefinition id="ErrorEventDefinition_1e6fxbo" errorRef="Error_1k43fdo" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
-      </bpmn:boundaryEvent>
-      <bpmn:boundaryEvent id="Event_0c5sd6q" attachedToRef="Activity_11oab5m">
-        <bpmn:outgoing>Flow_1jv8ab3</bpmn:outgoing>
-        <bpmn:errorEventDefinition id="ErrorEventDefinition_0yc5tvh" errorRef="Error_0w7vlju" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
-      </bpmn:boundaryEvent>
-      <bpmn:sequenceFlow id="Flow_0vjknpw" sourceRef="Activity_0pl02q8" targetRef="Activity_16pfuae" />
-      <bpmn:sequenceFlow id="Flow_0tzu02a" sourceRef="Activity_16pfuae" targetRef="Activity_1stc18d" />
-      <bpmn:sequenceFlow id="Flow_10czfw7" sourceRef="Activity_1stc18d" targetRef="Gateway_00njgur" />
-      <bpmn:sequenceFlow id="Flow_04ndi2n" sourceRef="Gateway_00njgur" targetRef="Activity_07c7dml" />
-      <bpmn:sequenceFlow id="Flow_14l56cn" sourceRef="Activity_07c7dml" targetRef="Activity_0pz98i4" />
-      <bpmn:sequenceFlow id="Flow_1lv6fnj" name="Да" sourceRef="Gateway_1xc6ld4" targetRef="Gateway_00njgur">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${retry}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:sequenceFlow id="Flow_15gee7h" name="Да" sourceRef="Gateway_0j7gujj" targetRef="Gateway_00njgur">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!pay}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:sequenceFlow id="Flow_1bo1x5c" sourceRef="Activity_0pz98i4" targetRef="Gateway_0j7gujj" />
-      <bpmn:sequenceFlow id="Flow_1bmzkkc" name="нет" sourceRef="Gateway_0j7gujj" targetRef="Activity_11oab5m">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${pay}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:sequenceFlow id="Flow_1bt95s1" sourceRef="Gateway_12i0fqx" targetRef="Activity_10vhv2o" />
-      <bpmn:sequenceFlow id="Flow_0rpmnzn" sourceRef="Activity_10vhv2o" targetRef="Gateway_1xc6ld4" />
-      <bpmn:sequenceFlow id="Flow_10akbra" name="Нет" sourceRef="Gateway_1xc6ld4" targetRef="Event_0qkenvs">
-        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!retry}</bpmn:conditionExpression>
-      </bpmn:sequenceFlow>
-      <bpmn:sequenceFlow id="Flow_0bjgmbi" sourceRef="Activity_07fsrhn" targetRef="Gateway_12i0fqx" />
-      <bpmn:sequenceFlow id="Flow_17yd0i2" sourceRef="Activity_1ktk4np" targetRef="Gateway_12i0fqx" />
-      <bpmn:sequenceFlow id="Flow_1jv8ab3" sourceRef="Event_0c5sd6q" targetRef="Activity_07fsrhn" />
-      <bpmn:sequenceFlow id="Flow_05jaa54" sourceRef="Activity_11oab5m" targetRef="Activity_15kyw3j" />
-      <bpmn:sequenceFlow id="Flow_0pbmba5" sourceRef="Event_00v9eju" targetRef="Activity_1ktk4np" />
       <bpmn:sequenceFlow id="Flow_0p3s14q" sourceRef="Activity_15kyw3j" targetRef="Event_0oos2am" />
-      <bpmn:sequenceFlow id="Flow_0nduqhw" sourceRef="Event_19bshx3" targetRef="Activity_0pl02q8" />
       <bpmn:task id="Activity_07fsrhn" name="Откат транзакции">
         <bpmn:incoming>Flow_1jv8ab3</bpmn:incoming>
         <bpmn:outgoing>Flow_0bjgmbi</bpmn:outgoing>
@@ -285,363 +596,36 @@
           <bpmn:targetRef>DataStoreReference_0y7vl9j</bpmn:targetRef>
         </bpmn:dataOutputAssociation>
       </bpmn:task>
+      <bpmn:sequenceFlow id="Flow_0bjgmbi" sourceRef="Activity_07fsrhn" targetRef="Gateway_12i0fqx" />
+      <bpmn:sequenceFlow id="Flow_1jv8ab3" sourceRef="Event_0c5sd6q" targetRef="Activity_07fsrhn" />
       <bpmn:task id="Activity_1ktk4np" name="Установка статуса платежа в FAILED">
         <bpmn:incoming>Flow_0pbmba5</bpmn:incoming>
         <bpmn:outgoing>Flow_17yd0i2</bpmn:outgoing>
       </bpmn:task>
+      <bpmn:sequenceFlow id="Flow_17yd0i2" sourceRef="Activity_1ktk4np" targetRef="Gateway_12i0fqx" />
+      <bpmn:exclusiveGateway id="Gateway_1xc6ld4" name="Повтор?">
+        <bpmn:incoming>Flow_0rpmnzn</bpmn:incoming>
+        <bpmn:outgoing>Flow_1lv6fnj</bpmn:outgoing>
+        <bpmn:outgoing>Flow_10akbra</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="Flow_1lv6fnj" name="Да" sourceRef="Gateway_1xc6ld4" targetRef="Gateway_00njgur">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${retry}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_10akbra" name="Нет" sourceRef="Gateway_1xc6ld4" targetRef="Event_0qkenvs">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!retry}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Flow_0rpmnzn" sourceRef="Activity_10vhv2o" targetRef="Gateway_1xc6ld4" />
       <bpmn:textAnnotation id="TextAnnotation_1bfdqp5">
         <bpmn:text>410 Объявление удалено</bpmn:text>
       </bpmn:textAnnotation>
+      <bpmn:association id="Association_03dcadh" associationDirection="None" sourceRef="Event_0c5sd6q" targetRef="TextAnnotation_1bfdqp5" />
       <bpmn:textAnnotation id="TextAnnotation_11brs3t">
         <bpmn:text>503 Ошибка платежного сервиса</bpmn:text>
       </bpmn:textAnnotation>
-      <bpmn:association id="Association_03dcadh" associationDirection="None" sourceRef="Event_0c5sd6q" targetRef="TextAnnotation_1bfdqp5" />
       <bpmn:association id="Association_0l16m16" associationDirection="None" sourceRef="Event_00v9eju" targetRef="TextAnnotation_11brs3t" />
     </bpmn:subProcess>
-    <bpmn:inclusiveGateway id="Gateway_0oke3q9">
-      <bpmn:incoming>Flow_171xeck</bpmn:incoming>
-      <bpmn:incoming>Flow_0jxxcjg</bpmn:incoming>
-      <bpmn:outgoing>Flow_1jt8ewo</bpmn:outgoing>
-    </bpmn:inclusiveGateway>
-    <bpmn:userTask id="Activity_0npoc0d" name="Выбрать тип недвижимости">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="Adv_Type" label="Advertisement Type" type="enum">
-            <camunda:validation />
-            <camunda:value id="APARTMENT" name="APARTMENT" />
-            <camunda:value id="HOUSE" name="HOUSE" />
-            <camunda:value id="LAND" name="LAND" />
-            <camunda:value id="COMMERCIAL" name="COMMERCIAL" />
-            <camunda:value id="GARAGE" name="GARAGE" />
-            <camunda:value id="STORAGE" name="STORAGE" />
-            <camunda:value id="OTHER" name="OTHER" />
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_07rilka</bpmn:incoming>
-      <bpmn:outgoing>Flow_13ekx2y</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:userTask id="Activity_0ca4xzq" name="Заполнение карточки объявления">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="Adv_Title" label="Title" type="string" />
-          <camunda:formField id="Adv_Desc" label="Description" type="string" />
-          <camunda:formField id="Adv_Price" label="Price" type="long" />
-          <camunda:formField id="Adv_Address" label="Address" type="string" />
-          <camunda:formField id="Adv_City" label="City" type="string" />
-        </camunda:formData>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_13ekx2y</bpmn:incoming>
-      <bpmn:incoming>Flow_0uxsvkp</bpmn:incoming>
-      <bpmn:outgoing>Flow_0e0f7yz</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:userTask id="Activity_0grea0y" name="Авторизация">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="token" label="token" type="string">
-            <camunda:validation />
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0yo24kc</bpmn:incoming>
-      <bpmn:outgoing>Flow_0dmsaws</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:exclusiveGateway id="Gateway_00ub9ju" name="Авторизован?">
-      <bpmn:extensionElements />
-      <bpmn:incoming>Flow_03kxutk</bpmn:incoming>
-      <bpmn:outgoing>Flow_07rilka</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0va4dfk</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Activity_0mwda64" name="Проверка авторизации" camunda:type="external" camunda:topic="check-auth">
-      <bpmn:extensionElements />
-      <bpmn:incoming>Flow_0dmsaws</bpmn:incoming>
-      <bpmn:outgoing>Flow_03kxutk</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_011zhd7" name="Валидация информации" camunda:type="external" camunda:topic="adv-form-validation">
-      <bpmn:extensionElements>
-        <camunda:errorEventDefinition id="ErrorEventDefinition_0909j4l" errorRef="Error_06oboto" />
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_0e0f7yz</bpmn:incoming>
-      <bpmn:outgoing>Flow_0gu5z8d</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:userTask id="Activity_1quv63e" name="Просмотр объявления">
-      <bpmn:extensionElements>
-        <camunda:formData>
-          <camunda:formField id="advertisement" label="Advertisement" type="string">
-            <camunda:properties />
-            <camunda:validation />
-          </camunda:formField>
-        </camunda:formData>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_06djk5l</bpmn:incoming>
-      <bpmn:outgoing>Flow_0yfkcq7</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:boundaryEvent id="Event_0pcdci2" attachedToRef="Activity_1tjkkkh">
-      <bpmn:outgoing>Flow_1usqade</bpmn:outgoing>
-      <bpmn:errorEventDefinition id="ErrorEventDefinition_0vfku8y" errorRef="Error_19w686v" />
-    </bpmn:boundaryEvent>
-    <bpmn:boundaryEvent id="Event_1y9qax3" attachedToRef="Activity_011zhd7">
-      <bpmn:outgoing>Flow_1xb2v5f</bpmn:outgoing>
-      <bpmn:errorEventDefinition id="ErrorEventDefinition_0r5ys7i" errorRef="Error_06oboto" camunda:errorCodeVariable="code" camunda:errorMessageVariable="status" />
-    </bpmn:boundaryEvent>
-    <bpmn:sequenceFlow id="Flow_0yo24kc" sourceRef="Event_0a1gdam" targetRef="Activity_0grea0y" />
-    <bpmn:sequenceFlow id="Flow_12187l8" sourceRef="Activity_0ru07i7" targetRef="Gateway_1oy02a6" />
-    <bpmn:sequenceFlow id="Flow_0jxxcjg" name="Нет" sourceRef="Gateway_1oy02a6" targetRef="Gateway_0oke3q9">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!Adv_Approve}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_1cbtya1" name="Да" sourceRef="Gateway_1oy02a6" targetRef="Activity_1ykd20b">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${Adv_Approve}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0yfkcq7" sourceRef="Activity_1quv63e" targetRef="Activity_0ru07i7" />
-    <bpmn:sequenceFlow id="Flow_0gu5z8d" sourceRef="Activity_011zhd7" targetRef="Activity_1tjkkkh" />
-    <bpmn:sequenceFlow id="Flow_06djk5l" sourceRef="Activity_1tjkkkh" targetRef="Activity_1quv63e" />
-    <bpmn:sequenceFlow id="Flow_1xb2v5f" sourceRef="Event_1y9qax3" targetRef="Gateway_0cpq8v0" />
-    <bpmn:sequenceFlow id="Flow_1usqade" sourceRef="Event_0pcdci2" targetRef="Gateway_0cpq8v0" />
-    <bpmn:sequenceFlow id="Flow_0uxsvkp" sourceRef="Gateway_0cpq8v0" targetRef="Activity_0ca4xzq" />
-    <bpmn:sequenceFlow id="Flow_1jt8ewo" sourceRef="Gateway_0oke3q9" targetRef="Event_0lc624t" />
-    <bpmn:sequenceFlow id="Flow_0va4dfk" name="Нет" sourceRef="Gateway_00ub9ju" targetRef="Event_11affi5">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isAuthenticated}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_171xeck" sourceRef="Activity_1ykd20b" targetRef="Gateway_0oke3q9" />
-    <bpmn:sequenceFlow id="Flow_07rilka" name="Да" sourceRef="Gateway_00ub9ju" targetRef="Activity_0npoc0d">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isAuthenticated}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_13ekx2y" sourceRef="Activity_0npoc0d" targetRef="Activity_0ca4xzq" />
-    <bpmn:sequenceFlow id="Flow_0e0f7yz" sourceRef="Activity_0ca4xzq" targetRef="Activity_011zhd7" />
-    <bpmn:sequenceFlow id="Flow_0dmsaws" sourceRef="Activity_0grea0y" targetRef="Activity_0mwda64" />
-    <bpmn:sequenceFlow id="Flow_03kxutk" sourceRef="Activity_0mwda64" targetRef="Gateway_00ub9ju" />
   </bpmn:process>
-  <bpmn:process id="Process_0whlblc" name="Запланированная проверка истечения продвижения" isExecutable="true">
-    <bpmn:laneSet id="LaneSet_006njkv">
-      <bpmn:lane id="Lane_0nq18jz" name="Consumer">
-        <bpmn:flowNodeRef>Gateway_13fl6js</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0hwep54</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_1keokua</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_1hv1xeh</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_14bhgdc</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0zyyo4b</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0ecyiot</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_1iznz2e" name="Producer">
-        <bpmn:flowNodeRef>Activity_1h3tanm</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_1471x2u</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_1masl6b</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_11c0bam</bpmn:flowNodeRef>
-      </bpmn:lane>
-    </bpmn:laneSet>
-    <bpmn:serviceTask id="Activity_1h3tanm" name="Получение объявлений с истекшим временем продвижения" camunda:type="external" camunda:topic="prom-find-expired">
-      <bpmn:incoming>Flow_06yvvzw</bpmn:incoming>
-      <bpmn:outgoing>Flow_067hcfs</bpmn:outgoing>
-      <bpmn:property id="Property_163we71" name="__targetRef_placeholder" />
-      <bpmn:dataInputAssociation id="DataInputAssociation_1g2vg07">
-        <bpmn:sourceRef>DataStoreReference_1uywd3i</bpmn:sourceRef>
-        <bpmn:targetRef>Property_163we71</bpmn:targetRef>
-      </bpmn:dataInputAssociation>
-    </bpmn:serviceTask>
-    <bpmn:dataStoreReference id="DataStoreReference_1uywd3i" name="База Данных" />
-    <bpmn:serviceTask id="Activity_1471x2u" name="Отправка в очередь" camunda:type="external" camunda:topic="prom-send-to-queue">
-      <bpmn:incoming>Flow_067hcfs</bpmn:incoming>
-      <bpmn:outgoing>Flow_0irnw1r</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics isSequential="true" />
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="Gateway_13fl6js">
-      <bpmn:incoming>Flow_03qxxah</bpmn:incoming>
-      <bpmn:outgoing>Flow_1klilqt</bpmn:outgoing>
-      <bpmn:outgoing>Flow_0f8e02g</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Activity_0hwep54" name="Отключение продвижения" camunda:type="external" camunda:topic="prom-disable">
-      <bpmn:incoming>Flow_1klilqt</bpmn:incoming>
-      <bpmn:outgoing>Flow_15v88k2</bpmn:outgoing>
-      <bpmn:dataOutputAssociation id="DataOutputAssociation_1inbppp">
-        <bpmn:targetRef>DataStoreReference_0iq1mzn</bpmn:targetRef>
-      </bpmn:dataOutputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics />
-    </bpmn:serviceTask>
-    <bpmn:dataStoreReference id="DataStoreReference_0iq1mzn" name="База Данных" />
-    <bpmn:endEvent id="Event_1keokua" name="Сообщение не отправлено">
-      <bpmn:incoming>Flow_0f8e02g</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:serviceTask id="Activity_1hv1xeh" name="Получение объявления по ID" camunda:type="external" camunda:topic="prom-get-adv-by-id">
-      <bpmn:incoming>Flow_0irnw1r</bpmn:incoming>
-      <bpmn:outgoing>Flow_00fp2p8</bpmn:outgoing>
-      <bpmn:property id="Property_17uvgqy" name="__targetRef_placeholder" />
-      <bpmn:dataInputAssociation id="DataInputAssociation_0119jon">
-        <bpmn:sourceRef>DataStoreReference_0naelyj</bpmn:sourceRef>
-        <bpmn:targetRef>Property_17uvgqy</bpmn:targetRef>
-      </bpmn:dataInputAssociation>
-      <bpmn:multiInstanceLoopCharacteristics />
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_14bhgdc" name="Проверка наличия продвижения" camunda:type="external" camunda:topic="prom-check">
-      <bpmn:incoming>Flow_00fp2p8</bpmn:incoming>
-      <bpmn:outgoing>Flow_03qxxah</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
-    </bpmn:serviceTask>
-    <bpmn:subProcess id="Activity_0ecyiot" name="Отправка сообщения на почту">
-      <bpmn:incoming>Flow_15v88k2</bpmn:incoming>
-      <bpmn:outgoing>Flow_013di65</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
-      <bpmn:startEvent id="Event_15zh9pw" name="Начало отправки письма">
-        <bpmn:outgoing>Flow_17v395o</bpmn:outgoing>
-      </bpmn:startEvent>
-      <bpmn:serviceTask id="Activity_13q3rkf" name="Получения почты пользователя" camunda:type="external" camunda:topic="email-get-user-address">
-        <bpmn:incoming>Flow_17v395o</bpmn:incoming>
-        <bpmn:outgoing>Flow_0ij72ym</bpmn:outgoing>
-        <bpmn:property id="Property_1vio6mm" name="__targetRef_placeholder" />
-        <bpmn:dataInputAssociation id="DataInputAssociation_09i90gt">
-          <bpmn:sourceRef>DataStoreReference_1jfwkxl</bpmn:sourceRef>
-          <bpmn:targetRef>Property_1vio6mm</bpmn:targetRef>
-        </bpmn:dataInputAssociation>
-      </bpmn:serviceTask>
-      <bpmn:serviceTask id="Activity_1t2wvhp" name="Генерация контента письма" camunda:type="external" camunda:topic="email-generate-disabled">
-        <bpmn:incoming>Flow_0ij72ym</bpmn:incoming>
-        <bpmn:outgoing>Flow_1cdrfgy</bpmn:outgoing>
-      </bpmn:serviceTask>
-      <bpmn:sequenceFlow id="Flow_17v395o" sourceRef="Event_15zh9pw" targetRef="Activity_13q3rkf" />
-      <bpmn:sequenceFlow id="Flow_0ij72ym" sourceRef="Activity_13q3rkf" targetRef="Activity_1t2wvhp" />
-      <bpmn:sequenceFlow id="Flow_1cdrfgy" sourceRef="Activity_1t2wvhp" targetRef="Event_0vr9xmh" />
-      <bpmn:dataStoreReference id="DataStoreReference_1jfwkxl" name="База Данных" />
-      <bpmn:endEvent id="Event_0vr9xmh" name="Письмо отправлено">
-        <bpmn:incoming>Flow_1cdrfgy</bpmn:incoming>
-      </bpmn:endEvent>
-    </bpmn:subProcess>
-    <bpmn:endEvent id="Event_0zyyo4b" name="Сообщение отправлено">
-      <bpmn:incoming>Flow_013di65</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:dataStoreReference id="DataStoreReference_0naelyj" name="База Данных" />
-    <bpmn:startEvent id="Event_1masl6b" name="Запуск Сервера">
-      <bpmn:outgoing>Flow_0w3y0a4</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:intermediateCatchEvent id="Event_11c0bam" name="1 Минуты">
-      <bpmn:incoming>Flow_0w3y0a4</bpmn:incoming>
-      <bpmn:outgoing>Flow_06yvvzw</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_1p34nsb">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */1 * * * ?</bpmn:timeCycle>
-      </bpmn:timerEventDefinition>
-    </bpmn:intermediateCatchEvent>
-    <bpmn:sequenceFlow id="Flow_06yvvzw" sourceRef="Event_11c0bam" targetRef="Activity_1h3tanm" />
-    <bpmn:sequenceFlow id="Flow_067hcfs" sourceRef="Activity_1h3tanm" targetRef="Activity_1471x2u" />
-    <bpmn:sequenceFlow id="Flow_0irnw1r" sourceRef="Activity_1471x2u" targetRef="Activity_1hv1xeh" />
-    <bpmn:sequenceFlow id="Flow_03qxxah" sourceRef="Activity_14bhgdc" targetRef="Gateway_13fl6js" />
-    <bpmn:sequenceFlow id="Flow_1klilqt" name="Есть" sourceRef="Gateway_13fl6js" targetRef="Activity_0hwep54">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isPromoted}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0f8e02g" name="Нет" sourceRef="Gateway_13fl6js" targetRef="Event_1keokua">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isPromoted}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_15v88k2" sourceRef="Activity_0hwep54" targetRef="Activity_0ecyiot" />
-    <bpmn:sequenceFlow id="Flow_00fp2p8" sourceRef="Activity_1hv1xeh" targetRef="Activity_14bhgdc" />
-    <bpmn:sequenceFlow id="Flow_013di65" sourceRef="Activity_0ecyiot" targetRef="Event_0zyyo4b" />
-    <bpmn:sequenceFlow id="Flow_0w3y0a4" sourceRef="Event_1masl6b" targetRef="Event_11c0bam" />
-  </bpmn:process>
-  <bpmn:process id="Process_00apgjo" name="Запланированная проверка скорого истечения продвижения" isExecutable="true">
-    <bpmn:laneSet id="LaneSet_1r6lpbp">
-      <bpmn:lane id="Lane_1d5l506" name="Consumer">
-        <bpmn:flowNodeRef>Event_00ysdss</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_05ckniw</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Gateway_0c97im2</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_1425mgv</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0zfklg2</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_02srp35</bpmn:flowNodeRef>
-      </bpmn:lane>
-      <bpmn:lane id="Lane_1kisgfh" name="Producer">
-        <bpmn:flowNodeRef>Activity_1psk21s</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Activity_0mzf099</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_1ptq8yz</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Event_0wgsx43</bpmn:flowNodeRef>
-      </bpmn:lane>
-    </bpmn:laneSet>
-    <bpmn:subProcess id="Activity_02srp35" name="Отправка сообщения на почту">
-      <bpmn:incoming>Flow_0t81aoh</bpmn:incoming>
-      <bpmn:outgoing>Flow_00433ax</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
-      <bpmn:startEvent id="Event_03p2h76" name="Начало отправки письма">
-        <bpmn:outgoing>Flow_02rwjt3</bpmn:outgoing>
-      </bpmn:startEvent>
-      <bpmn:serviceTask id="Activity_1f7fjhm" name="Получения почты пользователя" camunda:type="external" camunda:topic="email-get-user-address">
-        <bpmn:incoming>Flow_02rwjt3</bpmn:incoming>
-        <bpmn:outgoing>Flow_1dlj6tq</bpmn:outgoing>
-        <bpmn:property id="Property_0lt4f3n" name="__targetRef_placeholder" />
-        <bpmn:dataInputAssociation id="DataInputAssociation_04nsccq">
-          <bpmn:sourceRef>DataStoreReference_1rbd69l</bpmn:sourceRef>
-          <bpmn:targetRef>Property_0lt4f3n</bpmn:targetRef>
-        </bpmn:dataInputAssociation>
-      </bpmn:serviceTask>
-      <bpmn:serviceTask id="Activity_09b5k3e" name="Генерация контента письма" camunda:type="external" camunda:topic="email-generate-reminder">
-        <bpmn:incoming>Flow_1dlj6tq</bpmn:incoming>
-        <bpmn:outgoing>Flow_1dkldms</bpmn:outgoing>
-      </bpmn:serviceTask>
-      <bpmn:dataStoreReference id="DataStoreReference_1rbd69l" name="База Данных" />
-      <bpmn:sequenceFlow id="Flow_02rwjt3" sourceRef="Event_03p2h76" targetRef="Activity_1f7fjhm" />
-      <bpmn:sequenceFlow id="Flow_1dlj6tq" sourceRef="Activity_1f7fjhm" targetRef="Activity_09b5k3e" />
-      <bpmn:sequenceFlow id="Flow_1dkldms" sourceRef="Activity_09b5k3e" targetRef="Event_0a2v4j7" />
-      <bpmn:endEvent id="Event_0a2v4j7" name="Письмо отправлено">
-        <bpmn:incoming>Flow_1dkldms</bpmn:incoming>
-      </bpmn:endEvent>
-    </bpmn:subProcess>
-    <bpmn:endEvent id="Event_00ysdss" name="Сообщение не отправлено">
-      <bpmn:incoming>Flow_1dx9xvk</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:endEvent id="Event_05ckniw" name="Сообщение отправлено">
-      <bpmn:incoming>Flow_00433ax</bpmn:incoming>
-    </bpmn:endEvent>
-    <bpmn:exclusiveGateway id="Gateway_0c97im2">
-      <bpmn:incoming>Flow_0ktovms</bpmn:incoming>
-      <bpmn:outgoing>Flow_0t81aoh</bpmn:outgoing>
-      <bpmn:outgoing>Flow_1dx9xvk</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Activity_1425mgv" name="Проверка наличия продвижения" camunda:type="external" camunda:topic="prom-check">
-      <bpmn:incoming>Flow_08jlwmz</bpmn:incoming>
-      <bpmn:outgoing>Flow_0ktovms</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_0zfklg2" name="Получение объявления по ID" camunda:type="external" camunda:topic="prom-get-adv-by-id">
-      <bpmn:incoming>Flow_1t9ygwn</bpmn:incoming>
-      <bpmn:outgoing>Flow_08jlwmz</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics />
-    </bpmn:serviceTask>
-    <bpmn:serviceTask id="Activity_1psk21s" name="Отправка в очередь" camunda:type="external" camunda:topic="prom-send-to-queue">
-      <bpmn:incoming>Flow_1bncog7</bpmn:incoming>
-      <bpmn:outgoing>Flow_1t9ygwn</bpmn:outgoing>
-      <bpmn:multiInstanceLoopCharacteristics isSequential="true" />
-    </bpmn:serviceTask>
-    <bpmn:dataStoreReference id="DataStoreReference_1duoslh" name="База Данных" />
-    <bpmn:serviceTask id="Activity_0mzf099" name="Получение объявлений, продвижение которых скоро истечёт" camunda:type="external" camunda:topic="prom-find-expired">
-      <bpmn:incoming>Flow_1skktla</bpmn:incoming>
-      <bpmn:outgoing>Flow_1bncog7</bpmn:outgoing>
-      <bpmn:property id="Property_0frxpll" name="__targetRef_placeholder" />
-      <bpmn:dataInputAssociation id="DataInputAssociation_083ubad">
-        <bpmn:sourceRef>DataStoreReference_1duoslh</bpmn:sourceRef>
-        <bpmn:targetRef>Property_0frxpll</bpmn:targetRef>
-      </bpmn:dataInputAssociation>
-    </bpmn:serviceTask>
-    <bpmn:intermediateCatchEvent id="Event_1ptq8yz" name="1 минуты">
-      <bpmn:incoming>Flow_0m9vl3j</bpmn:incoming>
-      <bpmn:outgoing>Flow_1skktla</bpmn:outgoing>
-      <bpmn:timerEventDefinition id="TimerEventDefinition_169ann9">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */1 * * * ?</bpmn:timeCycle>
-      </bpmn:timerEventDefinition>
-    </bpmn:intermediateCatchEvent>
-    <bpmn:startEvent id="Event_0wgsx43" name="Запуск сервера">
-      <bpmn:outgoing>Flow_0m9vl3j</bpmn:outgoing>
-    </bpmn:startEvent>
-    <bpmn:sequenceFlow id="Flow_0t81aoh" name="Есть" sourceRef="Gateway_0c97im2" targetRef="Activity_02srp35">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${isPromoted}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_00433ax" sourceRef="Activity_02srp35" targetRef="Event_05ckniw" />
-    <bpmn:sequenceFlow id="Flow_1dx9xvk" name="Нет" sourceRef="Gateway_0c97im2" targetRef="Event_00ysdss">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${!isPromoted}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_0ktovms" sourceRef="Activity_1425mgv" targetRef="Gateway_0c97im2" />
-    <bpmn:sequenceFlow id="Flow_08jlwmz" sourceRef="Activity_0zfklg2" targetRef="Activity_1425mgv" />
-    <bpmn:sequenceFlow id="Flow_1t9ygwn" sourceRef="Activity_1psk21s" targetRef="Activity_0zfklg2" />
-    <bpmn:sequenceFlow id="Flow_1bncog7" sourceRef="Activity_0mzf099" targetRef="Activity_1psk21s" />
-    <bpmn:sequenceFlow id="Flow_1skktla" sourceRef="Event_1ptq8yz" targetRef="Activity_0mzf099" />
-    <bpmn:sequenceFlow id="Flow_0m9vl3j" sourceRef="Event_0wgsx43" targetRef="Event_1ptq8yz" />
-  </bpmn:process>
-  <bpmn:error id="Error_06oboto" name="BadRequest" errorCode="400" camunda:errorMessage="BadRequest" />
-  <bpmn:error id="Error_19w686v" name="InternalError" errorCode="500" camunda:errorMessage="Internal Error" />
-  <bpmn:error id="Error_1k43fdo" name="503Error" errorCode="503" camunda:errorMessage="Payment Service Error" />
-  <bpmn:error id="Error_0w7vlju" name="410Error" errorCode="410" camunda:errorMessage="Advertisement Deleted" />
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_1nqpqk1">
       <bpmndi:BPMNShape id="Participant_0lmxcl9_di" bpmnElement="Participant_0lmxcl9" isHorizontal="true">
@@ -664,6 +648,9 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_1oy02a6_di" bpmnElement="Gateway_1oy02a6" isMarkerVisible="true">
         <dc:Bounds x="1455" y="295" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1517" y="310" width="87" height="40" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="BPMNShape_0oj35z0" bpmnElement="Activity_0ru07i7">
         <dc:Bounds x="1290" y="280" width="100" height="80" />
@@ -681,6 +668,9 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0cpq8v0_di" bpmnElement="Gateway_0cpq8v0">
         <dc:Bounds x="1025" y="435" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1046" y="492" width="8" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0lc624t_di" bpmnElement="Event_0lc624t" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
         <dc:Bounds x="1702" y="432" width="36" height="36" />
@@ -733,6 +723,9 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1y9qax3_di" bpmnElement="Event_1y9qax3">
         <dc:Bounds x="962" y="582" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="901" y="590" width="12" height="14" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_0pcdci2_di" bpmnElement="Event_0pcdci2">
         <dc:Bounds x="1332" y="582" width="36" height="36" />
@@ -865,10 +858,6 @@
       <bpmndi:BPMNShape id="Gateway_13fl6js_di" bpmnElement="Gateway_13fl6js" isMarkerVisible="true">
         <dc:Bounds x="2240" y="613" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_0hwep54_di" bpmnElement="Activity_0hwep54">
-        <dc:Bounds x="2325" y="598" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="DataStoreReference_0iq1mzn_di" bpmnElement="DataStoreReference_0iq1mzn">
         <dc:Bounds x="2350" y="725" width="50" height="50" />
         <bpmndi:BPMNLabel>
@@ -881,29 +870,30 @@
           <dc:Bounds x="2228" y="765" width="76" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_10pg7hh_di" bpmnElement="Activity_1hv1xeh">
-        <dc:Bounds x="1950" y="598" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      <bpmndi:BPMNShape id="Event_0zyyo4b_di" bpmnElement="Event_0zyyo4b" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
+        <dc:Bounds x="2487" y="732" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2476" y="775" width="60" height="27" />
+        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_14bhgdc_di" bpmnElement="Activity_14bhgdc">
+      <bpmndi:BPMNShape id="DataStoreReference_0naelyj_di" bpmnElement="DataStoreReference_0naelyj">
+        <dc:Bounds x="1975" y="715" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1967" y="772" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0vte1ct_di" bpmnElement="Activity_1hv1xeh">
+        <dc:Bounds x="1950" y="598" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_06te7ta_di" bpmnElement="Activity_14bhgdc">
         <dc:Bounds x="2100" y="598" width="100" height="80" />
-        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0bi8ksq_di" bpmnElement="Activity_0hwep54">
+        <dc:Bounds x="2325" y="598" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0ecyiot_di" bpmnElement="Activity_0ecyiot" isExpanded="true">
         <dc:Bounds x="2455" y="598" width="100" height="80" />
         <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_0zyyo4b_di" bpmnElement="Event_0zyyo4b" bioc:stroke="#831311" bioc:fill="#ffcdd2" color:background-color="#ffcdd2" color:border-color="#831311">
-        <dc:Bounds x="2487" y="822" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="2476" y="865" width="60" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="DataStoreReference_0naelyj_di" bpmnElement="DataStoreReference_0naelyj">
-        <dc:Bounds x="1975" y="753" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="1967" y="810" width="67" height="14" />
-        </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1masl6b_di" bpmnElement="Event_1masl6b" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
         <dc:Bounds x="1982" y="310" width="36" height="36" />
@@ -959,7 +949,7 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_013di65_di" bpmnElement="Flow_013di65">
         <di:waypoint x="2505" y="678" />
-        <di:waypoint x="2505" y="820" />
+        <di:waypoint x="2505" y="732" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_0w3y0a4_di" bpmnElement="Flow_0w3y0a4">
         <di:waypoint x="2018" y="328" />
@@ -976,6 +966,12 @@
       <bpmndi:BPMNShape id="Lane_1d5l506_di" bpmnElement="Lane_1d5l506" isHorizontal="true">
         <dc:Bounds x="1910" y="1285" width="660" height="355" />
         <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_13umtfp_di" bpmnElement="Activity_0zfklg2">
+        <dc:Bounds x="1980" y="1402" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_01pxxhc_di" bpmnElement="Activity_1425mgv">
+        <dc:Bounds x="2110" y="1402" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_0toiakb_di" bpmnElement="Activity_02srp35">
         <dc:Bounds x="2330" y="1402" width="100" height="80" />
@@ -994,13 +990,6 @@
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Gateway_0c97im2_di" bpmnElement="Gateway_0c97im2" isMarkerVisible="true">
         <dc:Bounds x="2235" y="1417" width="50" height="50" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1425mgv_di" bpmnElement="Activity_1425mgv">
-        <dc:Bounds x="2110" y="1402" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1hj7fvt_di" bpmnElement="Activity_0zfklg2">
-        <dc:Bounds x="1980" y="1402" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Activity_1tffhhm_di" bpmnElement="Activity_1psk21s">
         <dc:Bounds x="2340" y="1072" width="100" height="80" />
@@ -1092,7 +1081,7 @@
         <di:waypoint x="2375" y="725" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_0119jon_di" bpmnElement="DataInputAssociation_0119jon">
-        <di:waypoint x="2000" y="753" />
+        <di:waypoint x="2000" y="715" />
         <di:waypoint x="2000" y="678" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="DataInputAssociation_083ubad_di" bpmnElement="DataInputAssociation_083ubad">
@@ -1102,6 +1091,94 @@
       <bpmndi:BPMNEdge id="Association_0ap1667_di" bpmnElement="Association_0ap1667">
         <di:waypoint x="963" y="596" />
         <di:waypoint x="950" y="593" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1q00f2w">
+    <bpmndi:BPMNPlane id="BPMNPlane_139vyh8" bpmnElement="Activity_0ecyiot">
+      <bpmndi:BPMNShape id="Event_15zh9pw_di" bpmnElement="Event_15zh9pw">
+        <dc:Bounds x="182" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="315" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DataStoreReference_1jfwkxl_di" bpmnElement="DataStoreReference_1jfwkxl">
+        <dc:Bounds x="295" y="115" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="85" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1q80tc5_di" bpmnElement="Event_0vr9xmh">
+        <dc:Bounds x="602" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="590" y="315" width="60" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1rvy1i7_di" bpmnElement="Activity_13q3rkf">
+        <dc:Bounds x="270" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0zljdrd_di" bpmnElement="Activity_1t2wvhp">
+        <dc:Bounds x="440" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="DataInputAssociation_09i90gt_di" bpmnElement="DataInputAssociation_09i90gt">
+        <di:waypoint x="320" y="165" />
+        <di:waypoint x="320" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_17v395o_di" bpmnElement="Flow_17v395o">
+        <di:waypoint x="218" y="290" />
+        <di:waypoint x="270" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0ij72ym_di" bpmnElement="Flow_0ij72ym">
+        <di:waypoint x="370" y="290" />
+        <di:waypoint x="440" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1cdrfgy_di" bpmnElement="Flow_1cdrfgy">
+        <di:waypoint x="540" y="290" />
+        <di:waypoint x="602" y="290" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_12wpfir">
+    <bpmndi:BPMNPlane id="BPMNPlane_0ncm3uz" bpmnElement="Activity_02srp35">
+      <bpmndi:BPMNShape id="BPMNShape_1kh6nqx" bpmnElement="Event_03p2h76">
+        <dc:Bounds x="182" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="156" y="315" width="88" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_09f28rs" bpmnElement="DataStoreReference_1rbd69l">
+        <dc:Bounds x="295" y="115" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="287" y="85" width="67" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Event_1v9rvmp_di" bpmnElement="Event_0a2v4j7">
+        <dc:Bounds x="602" y="272" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="590" y="315" width="60" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_0bwsym9_di" bpmnElement="Activity_1f7fjhm">
+        <dc:Bounds x="270" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_1vk6238_di" bpmnElement="Activity_09b5k3e">
+        <dc:Bounds x="440" y="250" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_1xyl1kl" bpmnElement="DataInputAssociation_04nsccq">
+        <di:waypoint x="320" y="165" />
+        <di:waypoint x="320" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_05etw99" bpmnElement="Flow_02rwjt3">
+        <di:waypoint x="218" y="290" />
+        <di:waypoint x="270" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_0tfqa0z" bpmnElement="Flow_1dlj6tq">
+        <di:waypoint x="370" y="290" />
+        <di:waypoint x="440" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_08wm9u1" bpmnElement="Flow_1dkldms">
+        <di:waypoint x="540" y="290" />
+        <di:waypoint x="602" y="290" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
@@ -1345,98 +1422,6 @@
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_1q00f2w">
-    <bpmndi:BPMNPlane id="BPMNPlane_139vyh8" bpmnElement="Activity_0ecyiot">
-      <bpmndi:BPMNShape id="Event_15zh9pw_di" bpmnElement="Event_15zh9pw">
-        <dc:Bounds x="182" y="272" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="156" y="315" width="88" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_13q3rkf_di" bpmnElement="Activity_13q3rkf">
-        <dc:Bounds x="270" y="250" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Activity_1t2wvhp_di" bpmnElement="Activity_1t2wvhp">
-        <dc:Bounds x="440" y="250" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="DataStoreReference_1jfwkxl_di" bpmnElement="DataStoreReference_1jfwkxl">
-        <dc:Bounds x="295" y="115" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="287" y="85" width="67" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1q80tc5_di" bpmnElement="Event_0vr9xmh">
-        <dc:Bounds x="602" y="272" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="590" y="315" width="60" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="DataInputAssociation_09i90gt_di" bpmnElement="DataInputAssociation_09i90gt">
-        <di:waypoint x="320" y="165" />
-        <di:waypoint x="320" y="250" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_17v395o_di" bpmnElement="Flow_17v395o">
-        <di:waypoint x="218" y="290" />
-        <di:waypoint x="270" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_0ij72ym_di" bpmnElement="Flow_0ij72ym">
-        <di:waypoint x="370" y="290" />
-        <di:waypoint x="440" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_1cdrfgy_di" bpmnElement="Flow_1cdrfgy">
-        <di:waypoint x="540" y="290" />
-        <di:waypoint x="602" y="290" />
-      </bpmndi:BPMNEdge>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
-  <bpmndi:BPMNDiagram id="BPMNDiagram_12wpfir">
-    <bpmndi:BPMNPlane id="BPMNPlane_0ncm3uz" bpmnElement="Activity_02srp35">
-      <bpmndi:BPMNShape id="BPMNShape_1kh6nqx" bpmnElement="Event_03p2h76">
-        <dc:Bounds x="182" y="272" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="156" y="315" width="88" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_1qzpxta" bpmnElement="Activity_1f7fjhm">
-        <dc:Bounds x="270" y="250" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0pk3zjl" bpmnElement="Activity_09b5k3e">
-        <dc:Bounds x="440" y="250" width="100" height="80" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_09f28rs" bpmnElement="DataStoreReference_1rbd69l">
-        <dc:Bounds x="295" y="115" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="287" y="85" width="67" height="14" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Event_1v9rvmp_di" bpmnElement="Event_0a2v4j7">
-        <dc:Bounds x="602" y="272" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="590" y="315" width="60" height="27" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="BPMNEdge_1xyl1kl" bpmnElement="DataInputAssociation_04nsccq">
-        <di:waypoint x="320" y="165" />
-        <di:waypoint x="320" y="250" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_05etw99" bpmnElement="Flow_02rwjt3">
-        <di:waypoint x="218" y="290" />
-        <di:waypoint x="270" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_0tfqa0z" bpmnElement="Flow_1dlj6tq">
-        <di:waypoint x="370" y="290" />
-        <di:waypoint x="440" y="290" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_08wm9u1" bpmnElement="Flow_1dkldms">
-        <di:waypoint x="540" y="290" />
-        <di:waypoint x="602" y="290" />
-      </bpmndi:BPMNEdge>
-    </bpmndi:BPMNPlane>
-  </bpmndi:BPMNDiagram>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1w5qccn">
     <bpmndi:BPMNPlane id="BPMNPlane_1ivoduu" bpmnElement="Activity_15kyw3j">
       <bpmndi:BPMNShape id="BPMNShape_1er020h" bpmnElement="Event_1lbqnjb" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
@@ -1515,10 +1500,6 @@
         <di:waypoint x="242" y="285" />
         <di:waypoint x="294" y="285" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_0542sjs" bpmnElement="DataInputAssociation_0c13mfg">
-        <di:waypoint x="344" y="160" />
-        <di:waypoint x="344" y="245" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="BPMNEdge_11aiu21" bpmnElement="Flow_1ccdqc6">
         <di:waypoint x="394" y="285" />
         <di:waypoint x="464" y="285" />
@@ -1526,6 +1507,10 @@
       <bpmndi:BPMNEdge id="BPMNEdge_0pr019j" bpmnElement="Flow_0lqulnh">
         <di:waypoint x="564" y="285" />
         <di:waypoint x="626" y="285" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_0542sjs" bpmnElement="DataInputAssociation_0c13mfg">
+        <di:waypoint x="344" y="160" />
+        <di:waypoint x="344" y="245" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
