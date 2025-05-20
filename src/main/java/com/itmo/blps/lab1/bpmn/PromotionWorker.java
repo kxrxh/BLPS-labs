@@ -122,7 +122,7 @@ public class PromotionWorker {
         // Set promotion id to advertisement id
         AdvertisementResponseDto advertisement = advertisementService.addPromotion(advertisementId, planId);
         if (advertisement == null) {
-            externalTaskService.handleBpmnError(externalTask, "APPLY_ERROR", "Advertisement not found");
+            externalTaskService.handleBpmnError(externalTask, "410", "Advertisement not found");
             return;
         }
 
@@ -137,11 +137,11 @@ public class PromotionWorker {
             if (payment != null) {
                 externalTaskService.complete(externalTask, Map.of("payment_id", payment.getId()));
             } else {
-                externalTaskService.handleBpmnError(externalTask, "APPLY_ERROR", "Payment failed");
+                externalTaskService.handleBpmnError(externalTask, "503", "Payment failed");
             }
         } catch (Exception e) {
             log.error("Error applying promotion", e);
-            externalTaskService.handleBpmnError(externalTask, "APPLY_ERROR", e.getMessage());
+            externalTaskService.handleBpmnError(externalTask, "503", e.getMessage());
         }
     }
 
@@ -305,6 +305,8 @@ public class PromotionWorker {
                         advertisementId, e.getMessage(), e);
             }
         }
-        externalTaskService.complete(externalTask);
+        // Assuming that if an ad is in the expired/soon_expired list, isPromoted should
+        // be false for subsequent steps
+        externalTaskService.complete(externalTask, Map.of("isPromoted", false));
     }
 }
