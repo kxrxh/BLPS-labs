@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: always
+    command:
+      # Entrypoints for HTTP (80) and HTTPS (443)
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      # Enable Docker provider, but only expose containers explicitly labeled
+      - "--providers.docker=true"
+      - "--providers.docker.exposedByDefault=false"
+      # ACME (Let's Encrypt) configuration
+      - "--certificatesResolvers.myresolver.acme.email=fostplaytime@domain.tld"
+      - "--certificatesResolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesResolvers.myresolver.acme.tlsChallenge=true"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-letsencrypt:/letsencrypt
+
+  camunda:
+    image: camunda/camunda-bpm-platform:latest
+    container_name: camunda
+    restart: always
+    expose:
+      - "8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.camunda.rule=Host(`zeta.isofinly.space`)"
+      - "traefik.http.routers.camunda.entrypoints=websecure"
+      - "traefik.http.routers.camunda.tls.certresolver=myresolver"
+      - "traefik.http.services.camunda.loadbalancer.server.port=8080"
+
+  spring:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: spring-app
+    restart: always
+    expose:
+      - "8088"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.spring.rule=Host(`tool.isofinly.space`)"
+      - "traefik.http.routers.spring.entrypoints=websecure"
+      - "traefik.http.routers.spring.tls.certresolver=myresolver"
+      - "traefik.http.services.spring.loadbalancer.server.port=8088"
+
+volumes:
+  traefik-letsencrypt:
+    driver: local
