@@ -390,6 +390,11 @@
     </bpmn:boundaryEvent>
     <bpmn:sequenceFlow id="Flow_1xb2v5f" sourceRef="Event_1y9qax3" targetRef="Gateway_0cpq8v0" />
     <bpmn:subProcess id="Activity_1ykd20b" name="Конфигурация продвижения">
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="adv_id">${adv_id}</camunda:inputParameter>
+        </camunda:inputOutput>
+      </bpmn:extensionElements>
       <bpmn:incoming>Flow_1cbtya1</bpmn:incoming>
       <bpmn:outgoing>Flow_171xeck</bpmn:outgoing>
       <bpmn:startEvent id="Event_19bshx3" name="Конфигурция продвижения">
@@ -773,10 +778,6 @@
         <di:waypoint x="2425" y="638" />
         <di:waypoint x="2455" y="638" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="Flow_00fp2p8_di" bpmnElement="Flow_00fp2p8">
-        <di:waypoint x="2050" y="638" />
-        <di:waypoint x="2325" y="638" />
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_013di65_di" bpmnElement="Flow_013di65">
         <di:waypoint x="2505" y="678" />
         <di:waypoint x="2505" y="732" />
@@ -794,6 +795,10 @@
       <bpmndi:BPMNEdge id="Flow_06yvvzw_di" bpmnElement="Flow_06yvvzw">
         <di:waypoint x="2118" y="328" />
         <di:waypoint x="2230" y="328" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_00fp2p8_di" bpmnElement="Flow_00fp2p8">
+        <di:waypoint x="2050" y="638" />
+        <di:waypoint x="2325" y="638" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Participant_0lmxcl9_di" bpmnElement="Participant_0lmxcl9" isHorizontal="true">
         <dc:Bounds x="155" y="85" width="1685" height="995" />

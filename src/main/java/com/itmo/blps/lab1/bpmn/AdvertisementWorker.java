@@ -69,6 +69,7 @@ public class AdvertisementWorker {
 
             AdvertisementResponseDto response = advertisementService.createAdvertisement(adDto, userId);
 
+            externalTaskService.setVariables(externalTask, Map.of("adv_id", response.getId()));
             externalTaskService.complete(externalTask,
                     Map.of("advertisement", objectMapper.writeValueAsString(response)),
                     Map.of("adv_id", response.getId()));
