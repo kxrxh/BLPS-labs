@@ -100,7 +100,6 @@ public class PaymentService {
             String notificationPayload = null;
             try {
                 Payment payment = createPayment(paymentDto, userId);
-                // processPayment now returns the payload or null
                 notificationPayload = processPayment(payment);
                 log.info("Notification payload: {}", notificationPayload);
                 if (notificationPayload != null) {
@@ -195,6 +194,10 @@ public class PaymentService {
         // 2. Simulate payment processing with the selected provider
         PaymentProvider provider = payment.getProvider();
         boolean isSuccessful = simulatePaymentProviderProcessing(provider);
+
+        if (payment.getAmount() == 999) {
+            throw new RuntimeException("Simulated payment failed for some reason!");
+        }
 
         if (isSuccessful) {
             // 3a. If successful, activate the promotion for the advertisement
