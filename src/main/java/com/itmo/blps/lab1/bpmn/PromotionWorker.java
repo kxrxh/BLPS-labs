@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.dto.PaymentDto;
 import com.itmo.blps.lab1.entities.Payment;
@@ -306,6 +305,6 @@ public class PromotionWorker {
             }
         }
 
-        externalTaskService.complete(externalTask, Map.of("isPromoted", false));
+        externalTaskService.complete(externalTask);
     }
 }
