@@ -305,8 +305,7 @@ public class PromotionWorker {
                         advertisementId, e.getMessage(), e);
             }
         }
-        // Assuming that if an ad is in the expired/soon_expired list, isPromoted should
-        // be false for subsequent steps
+
         externalTaskService.complete(externalTask, Map.of("isPromoted", false));
     }
 }
