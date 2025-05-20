@@ -184,6 +184,10 @@ public class JmsNotificationConsumer implements MessageListener, InitializingBea
         if (advertisementOpt.isPresent()) {
             Advertisement advertisement = advertisementOpt.get();
             try {
+                if (!advertisement.getIsPromoted()) {
+                    log.warn("Advertisement {} is not marked as promoted. Skipping expired notice.", advertisementId);
+                    return;
+                }
                 emailService.sendPromotionExpired(advertisement);
                 log.info("Promotion expired email sent for advertisement ID: {}", advertisementId);
 
