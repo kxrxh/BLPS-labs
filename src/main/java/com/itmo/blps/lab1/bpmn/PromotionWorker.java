@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.itmo.blps.lab1.dto.AdvertisementResponseDto;
 import com.itmo.blps.lab1.dto.PaymentDto;
 import com.itmo.blps.lab1.entities.Payment;
@@ -62,6 +63,9 @@ public class PromotionWorker {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @Value("${promotion.reminder.minutes-before:1}")
     private int reminderMinutesBefore;
 
@@ -91,7 +95,7 @@ public class PromotionWorker {
         List<Promotion> promotions = promotionService.getActivePromotions();
         try {
             externalTaskService.complete(externalTask,
-                    Map.of("plans", new ObjectMapper().writeValueAsString(promotions)));
+                    Map.of("plans", objectMapper.writeValueAsString(promotions)));
         } catch (JsonProcessingException e) {
             // Unexpected behavior
             log.error("Error getting plans", e);
@@ -103,7 +107,7 @@ public class PromotionWorker {
         List<PaymentProvider> paymentProviders = paymentService.getAvailableProviders();
         try {
             externalTaskService.complete(externalTask,
-                    Map.of("providers", new ObjectMapper().writeValueAsString(paymentProviders)));
+                    Map.of("providers", objectMapper.writeValueAsString(paymentProviders)));
         } catch (JsonProcessingException e) {
             log.error("Error getting providers", e);
             externalTaskService.handleBpmnError(externalTask, "GET_PROVIDERS_ERROR", e.getMessage());
@@ -166,7 +170,7 @@ public class PromotionWorker {
 
         try {
             externalTaskService.complete(externalTask,
-                    Map.of("expiredAdsList", new ObjectMapper().writeValueAsString(expiredAdsData), "type",
+                    Map.of("expiredAdsList", objectMapper.writeValueAsString(expiredAdsData), "type",
                             "expired"));
         } catch (JsonProcessingException e) {
             log.error("Error serializing expired ads data", e);
@@ -202,7 +206,7 @@ public class PromotionWorker {
 
         try {
             externalTaskService.complete(externalTask,
-                    Map.of("expiredAdsList", new ObjectMapper().writeValueAsString(expiredAdsData), "type",
+                    Map.of("expiredAdsList", objectMapper.writeValueAsString(expiredAdsData), "type",
                             "soon_expired"));
         } catch (JsonProcessingException e) {
             log.error("Error serializing expired ads data", e);
@@ -219,7 +223,6 @@ public class PromotionWorker {
             return;
         }
 
-        ObjectMapper objectMapper = new ObjectMapper();
         List<Map<String, Object>> expiredAdsData;
         try {
             expiredAdsData = objectMapper.readValue(expiredAdsJson, new TypeReference<List<Map<String, Object>>>() {
@@ -305,5 +308,3 @@ public class PromotionWorker {
         externalTaskService.complete(externalTask);
     }
 }
-
-

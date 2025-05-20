@@ -13,6 +13,7 @@ import com.itmo.blps.lab1.entities.RealEstateType;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
@@ -39,6 +40,12 @@ public class AdvertisementWorker {
         externalTaskClient.subscribe("adv-form-validation")
                 .handler(this::handleValidateAdvertisement)
                 .open();
+    }
+
+    @PreDestroy
+    public void unsubscribe() {
+        externalTaskClient.stop();
+        log.info("AdvertisementWorker unsubscribed from external tasks");
     }
 
     private void handleCreateAdvertisement(ExternalTask externalTask, ExternalTaskService externalTaskService) {
