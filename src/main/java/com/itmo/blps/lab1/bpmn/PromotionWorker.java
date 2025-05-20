@@ -65,7 +65,7 @@ public class PromotionWorker {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Value("${promotion.reminder.minutes-before:1}")
+    @Value("${promotion.reminder.minutes-before:5}")
     private int reminderMinutesBefore;
 
     @PostConstruct

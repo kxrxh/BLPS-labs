@@ -116,11 +116,11 @@
     <bpmn:sequenceFlow id="Flow_0irnw1r" sourceRef="Activity_1471x2u" targetRef="Activity_1hv1xeh" />
     <bpmn:sequenceFlow id="Flow_067hcfs" sourceRef="Activity_1h3tanm" targetRef="Activity_1471x2u" />
     <bpmn:sequenceFlow id="Flow_06yvvzw" sourceRef="Event_11c0bam" targetRef="Activity_1h3tanm" />
-    <bpmn:intermediateCatchEvent id="Event_11c0bam" name="1 Минуты">
+    <bpmn:intermediateCatchEvent id="Event_11c0bam" name="2 Минуты">
       <bpmn:incoming>Flow_0w3y0a4</bpmn:incoming>
       <bpmn:outgoing>Flow_06yvvzw</bpmn:outgoing>
       <bpmn:timerEventDefinition id="TimerEventDefinition_1p34nsb">
-        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */1 * * * ?</bpmn:timeCycle>
+        <bpmn:timeCycle xsi:type="bpmn:tFormalExpression">0 */2 * * * ?</bpmn:timeCycle>
       </bpmn:timerEventDefinition>
     </bpmn:intermediateCatchEvent>
     <bpmn:startEvent id="Event_1masl6b" name="Запуск Сервера">
@@ -319,7 +319,9 @@
         <camunda:formData>
           <camunda:formField id="advertisement" label="Advertisement" type="string">
             <camunda:properties />
-            <camunda:validation />
+            <camunda:validation>
+              <camunda:constraint name="readonly" />
+            </camunda:validation>
           </camunda:formField>
         </camunda:formData>
       </bpmn:extensionElements>
