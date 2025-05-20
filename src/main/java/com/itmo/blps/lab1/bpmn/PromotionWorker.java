@@ -65,7 +65,7 @@ public class PromotionWorker {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Value("${promotion.reminder.minutes-before:5}")
+    @Value("${promotion.reminder.minutes-before:1}")
     private int reminderMinutesBefore;
 
     @PostConstruct
@@ -118,15 +118,32 @@ public class PromotionWorker {
         Long providerId = externalTask.getVariable("provider_id");
         Long advertisementId = externalTask.getVariable("adv_id");
         Long userId = externalTask.getVariable("userId");
+
+        Promotion promotion = promotionService.getPromotionById(planId)
+                .orElse(null);
+
+        if (promotion == null) {
+            externalTaskService.handleBpmnError(externalTask, "400", "Promotion not found");
+            return;
+        }
+
+        PaymentProvider paymentProvider = paymentService.getAvailableProviders()
+                .stream()
+                .filter(provider -> provider.getId().equals(providerId))
+                .findFirst()
+                .orElse(null);
+
+        if (paymentProvider == null) {
+            externalTaskService.handleBpmnError(externalTask, "400", "Payment provider not found");
+            return;
+        }
+
         // Set promotion id to advertisement id
         AdvertisementResponseDto advertisement = advertisementService.addPromotion(advertisementId, planId);
         if (advertisement == null) {
             externalTaskService.handleBpmnError(externalTask, "410", "Advertisement not found");
             return;
         }
-
-        Promotion promotion = promotionService.getPromotionById(planId)
-                .orElseThrow(() -> new RuntimeException("Promotion not found"));
         PaymentDto paymentDto = new PaymentDto();
         paymentDto.setProviderId(providerId);
         paymentDto.setAdvertisementId(advertisementId);
@@ -183,9 +200,6 @@ public class PromotionWorker {
 
         List<Advertisement> expiredSoonAdvertisements = advertisementRepository
                 .findActivePromotionsExpiringBetween(now, reminderWindowEnd);
-
-        log.info("Found {} advertisements with expired promotions in the next 3 days.",
-                expiredSoonAdvertisements.size());
 
         List<Map<String, Object>> expiredAdsData = new ArrayList<>();
 
