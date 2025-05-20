@@ -312,6 +312,9 @@
             </camunda:validation>
           </camunda:formField>
         </camunda:formData>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="adv_id">${adv_id}</camunda:inputParameter>
+        </camunda:inputOutput>
       </bpmn:extensionElements>
       <bpmn:incoming>Flow_06djk5l</bpmn:incoming>
       <bpmn:outgoing>Flow_0yfkcq7</bpmn:outgoing>
@@ -1199,18 +1202,18 @@
           <dc:Bounds x="1198" y="83" width="43" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="Association_1m54t7v_di" bpmnElement="Association_1m54t7v">
-        <di:waypoint x="1501" y="605" />
-        <di:waypoint x="1521" y="577" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_0fb9s5l" bpmnElement="Association_0l16m16">
-        <di:waypoint x="1428" y="572" />
-        <di:waypoint x="1414" y="555" />
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="BPMNEdge_0m0srf4" bpmnElement="Association_03dcadh">
-        <di:waypoint x="1373" y="629" />
-        <di:waypoint x="1340" y="640" />
-      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BPMNShape_0qgrljd" bpmnElement="TextAnnotation_1bfdqp5">
+        <dc:Bounds x="1230" y="627" width="110" height="55" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BPMNShape_0dp6h2o" bpmnElement="TextAnnotation_11brs3t">
+        <dc:Bounds x="1330" y="500" width="100" height="55" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_1wk2gvc_di" bpmnElement="TextAnnotation_1wk2gvc">
+        <dc:Bounds x="1500" y="522" width="100" height="55" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Event_1w7zi26_di" bpmnElement="Event_1go8mrt">
         <dc:Bounds x="1472" y="602" width="36" height="36" />
       </bpmndi:BPMNShape>
@@ -1349,18 +1352,18 @@
         <di:waypoint x="1528" y="320" />
         <di:waypoint x="1230" y="320" />
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="TextAnnotation_1wk2gvc_di" bpmnElement="TextAnnotation_1wk2gvc">
-        <dc:Bounds x="1500" y="522" width="100" height="55" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0dp6h2o" bpmnElement="TextAnnotation_11brs3t">
-        <dc:Bounds x="1330" y="500" width="100" height="55" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="BPMNShape_0qgrljd" bpmnElement="TextAnnotation_1bfdqp5">
-        <dc:Bounds x="1230" y="627" width="110" height="55" />
-        <bpmndi:BPMNLabel />
-      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="BPMNEdge_0m0srf4" bpmnElement="Association_03dcadh">
+        <di:waypoint x="1373" y="629" />
+        <di:waypoint x="1340" y="640" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="BPMNEdge_0fb9s5l" bpmnElement="Association_0l16m16">
+        <di:waypoint x="1428" y="572" />
+        <di:waypoint x="1414" y="555" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_1m54t7v_di" bpmnElement="Association_1m54t7v">
+        <di:waypoint x="1501" y="605" />
+        <di:waypoint x="1521" y="577" />
+      </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
   <bpmndi:BPMNDiagram id="BPMNDiagram_1w5qccn">
