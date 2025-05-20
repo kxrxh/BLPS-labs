@@ -21,6 +21,7 @@ import com.itmo.blps.lab1.dto.PaymentDto;
 import com.itmo.blps.lab1.entities.Payment;
 import com.itmo.blps.lab1.entities.PaymentProvider;
 import com.itmo.blps.lab1.entities.Promotion;
+import com.itmo.blps.lab1.entities.Role;
 import com.itmo.blps.lab1.services.core.AdvertisementService;
 import com.itmo.blps.lab1.services.core.PaymentService;
 import com.itmo.blps.lab1.services.core.PromotionService;
@@ -138,9 +139,18 @@ public class PromotionWorker {
             return;
         }
 
-        // Set promotion id to advertisement id
-        AdvertisementResponseDto advertisement = advertisementService.addPromotion(advertisementId, planId);
+        Advertisement advertisement = advertisementRepository.findById(advertisementId)
+                .orElse(null);
+
         if (advertisement == null) {
+            externalTaskService.handleBpmnError(externalTask, "400", "Advertisement not found");
+            return;
+        }
+
+        // Set promotion id to advertisement id
+        AdvertisementResponseDto advertisementResponseDto = advertisementService.addPromotion(advertisementId,
+                planId);
+        if (advertisementResponseDto == null) {
             externalTaskService.handleBpmnError(externalTask, "410", "Advertisement not found");
             return;
         }
